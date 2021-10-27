@@ -7,7 +7,10 @@ import glob, os
 from yaml import Loader
 from yaml import load
 
-with open("/home/dung/OSAM/Build_bot/bot_tele_girl/secret.yaml","r") as yml_file:
+absolutepath = os.path.abspath(__file__)
+fileDirectory = os.path.dirname(absolutepath)
+print(fileDirectory)
+with open(fileDirectory+"/secret.yaml","r") as yml_file:
     data = load(yml_file, Loader=Loader)
 
 reply_keyboard = [['/start','/help']]
