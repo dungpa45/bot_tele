@@ -1,6 +1,6 @@
-from telegram.ext import Updater ,CommandHandler, InlineQueryHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
+from telegram.ext import Updater ,CommandHandler
 import requests, re, os
-from telegram import InlineQueryResultArticle, ParseMode, InputTextMessageContent, ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup
 from PIL import Image 
 import glob, random
 

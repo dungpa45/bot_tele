@@ -1,9 +1,9 @@
 import json
 import requests
-import time
+import os
 from datetime import datetime, timedelta
 from telegram import ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater
 from yaml import Loader
 from yaml import load
 
@@ -118,6 +118,7 @@ def data_openweather(content):
 
 def data_air(content):
     data = content['data']
+    print(data)
     AQI = data["current"]["pollution"]["aqius"]
     if AQI in range(0,50):
         mucdo = "Tốt. "+starFace+"\nBạn nên để không khí trong nhà được lưu thông"
