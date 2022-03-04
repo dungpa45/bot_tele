@@ -58,3 +58,5 @@ testem.log
 Thumbs.db
 
 secret.yaml
+credentials.json
+*.pickle

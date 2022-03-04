@@ -2,7 +2,7 @@ from telegram.ext import Updater ,CommandHandler
 import requests, re, os
 from telegram import ReplyKeyboardMarkup
 from PIL import Image 
-import glob, random
+import random
 
 
 reply_keboard = [['/dog','/cat']]

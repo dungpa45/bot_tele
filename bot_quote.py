@@ -1,8 +1,8 @@
 import json
 import re, requests
 import random
-from telegram.ext import Updater ,CommandHandler, InlineQueryHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, InputTextMessageContent, ReplyKeyboardMarkup
+from telegram.ext import Updater ,CommandHandler
+from telegram import ParseMode, ReplyKeyboardMarkup
 import glob, os
 from yaml import Loader
 from yaml import load

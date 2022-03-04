@@ -10,7 +10,7 @@ import random
 from yaml import Loader
 from yaml import load
 
-with open("/home/dung/OSAM/Build_bot/bot_tele_girl/secret.yaml","r") as yml_file:
+with open("./secret.yaml","r") as yml_file:
     data = load(yml_file, Loader=Loader)
 
 reply_keboard = [['/girl', '/woman'],['/vsbg', '/sexygirl'], ['/gaingon', '/xinh']]
@@ -28,19 +28,22 @@ def get_requestURL(user_id, endpoint="getList"):
     return(url_upto_apikey)
 
 
-# user_id = "184613026@N08"  #toi
-user_id = "152972566@N05"
+user_id = "184613026@N08"  #toi
+# user_id = "152972566@N05" #thg nay die r :(
 url = get_requestURL(user_id, endpoint="getList")
 strlist = requests.get(url).content
 json_data = json.loads(strlist.decode('utf-8'))
 albums = json_data["photosets"]["photoset"]
 
-# print("{} albums found for user_id={}".format(len(albums),user_id))
+print("{} albums found for user_id={}".format(len(albums),user_id))
 
-titles_album = ['VSBG 11 3 2020', 'MNTH 10-3-2020',
-                'GXCL 8-1-2020', 'vsbg 8-1-2020', 'MNTH 8-1-2020']
-id_album = ['72157713444579362', '72157713435781243',
-            "72157712571486817", "72157712572926553", "72157712569680982"]
+titles_album = ['Korea', 'VSBG','GaiChauA', 'GaiTay']
+id_album = ['72157711140679127', '72157711004094338',
+            "72157711003763163", "72157710952790532"]
+# titles_album = ['VSBG 11 3 2020', 'MNTH 10-3-2020',
+#                 'GXCL 8-1-2020', 'vsbg 8-1-2020', 'MNTH 8-1-2020']
+# id_album = ['72157713444579362', '72157713435781243',
+#             "72157712571486817", "72157712572926553", "72157712569680982"]
 d_id_title = dict(zip(titles_album, id_album))
 
 d_title_id_album = dict(zip(titles_album, id_album))
@@ -81,24 +84,26 @@ def get_id_album(id_album):
 
 
 def get_vsbg_img():
-    l_img = get_id_album(d_title_id_album["VSBG 11 3 2020"])
+    l_img = get_id_album(d_title_id_album[titles_album[1]])
     img = random.choice(l_img)
     return img
 
 
 def get_girl_img():
-    l_img = get_id_album(d_title_id_album["MNTH 10-3-2020"])
+    l_img = get_id_album(d_title_id_album[titles_album[2]])
     img = random.choice(l_img)
     return img
 
 
 def get_korea_img():
-    img = get_image_local("/home/ubuntu/new_bot/Korea")
+    l_img = get_id_album(d_title_id_album[titles_album[0]])
+    img = random.choice(l_img)
     return img
 
 
 def get_gaitay_img():
-    img = get_image_local("/home/ubuntu/new_bot/GaiTay")
+    l_img = get_id_album(d_title_id_album[titles_album[3]])
+    img = random.choice(l_img)
     return img
 
 
@@ -166,7 +171,6 @@ def gaitay(bot, update):
 
 def multi_girl(bot, update):
     l_girl = get_multi_girl_img()
-    # l_girl = ["https://farm66.staticflickr.com/65535/49350252231_2b4ebe4a39.jpg", "https://farm66.staticflickr.com/65535/49350271796_24673a516f.jpg", "https://farm66.staticflickr.com/65535/49350250281_2e91cb67ab.jpg"]
     print(l_girl, type(l_girl))
     chat_id = update.message.chat_id
     mess_id = update.message.message_id
@@ -196,11 +200,11 @@ def main():
     start_handler = CommandHandler('start', start)
     dp.add_handler(CommandHandler('help', help))
     dp.add_handler(CommandHandler(["girl", "gái", "women", "woman"], girl))
-    dp.add_handler(CommandHandler(["gaidep", "lady", "gaixinh"], multi_girl))
+    # dp.add_handler(CommandHandler(["gaidep", "lady", "gaixinh"], multi_girl))
     dp.add_handler(CommandHandler(['vsbg', 'sexygirl', 'sexylady'], vsbg))
-    dp.add_handler(CommandHandler(['xinh', 'girlxinh', 'gaingon'], multi_vsbg))
-   # dp.add_handler(CommandHandler(['korea', 'korean', 'gaihan'], korea))
-   # dp.add_handler(CommandHandler(['gáitây', 'gaitay'], gaitay))
+    # dp.add_handler(CommandHandler(['xinh', 'girlxinh', 'gaingon'], multi_vsbg))
+    dp.add_handler(CommandHandler(['korea', 'korean', 'gaihan'], korea))
+    dp.add_handler(CommandHandler(['gáitây', 'gaitay'], gaitay))
     dp.add_handler(MessageHandler(Filters.text, time, pass_job_queue=True))
 
     dp.add_handler(start_handler)
