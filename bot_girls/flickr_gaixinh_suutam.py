@@ -174,8 +174,7 @@ def get_girl_img():
 def get_image_local(img_dir):
     data_path = os.path.join(img_dir, '*.jpg')
     files = glob.glob(data_path)
-    img_ = random.choice(files)
-    img = img_.replace('\\', '/')
+    img = random.choice(files)
     return img
 
 def get_id_album(id_album):
@@ -236,37 +235,32 @@ def korea(bot, update):
     chat_id = update.message.chat_id
     mess_id = update.message.message_id
     bot.send_photo(chat_id=chat_id, reply_to_message_id=mess_id,
-                   photo=open(korea, "rb"))
+                   photo=korea)
 
 def gaitay(bot, update):
     gaitay = get_gaitay_img()
     chat_id = update.message.chat_id
     mess_id = update.message.message_id
     bot.send_photo(chat_id=chat_id, reply_to_message_id=mess_id,
-                   photo=open(gaitay, "rb"))
-
-def multi_girl(bot, update):
-    l_girl = get_multi_girl_img()
-    print(l_girl, type(l_girl))
-    chat_id = update.message.chat_id
-    mess_id = update.message.message_id
-    bot.send_photo(chat_id=chat_id, reply_to_message_id=mess_id, photo=l_girl)
-
-def multi_vsbg(bot, update):
-    l_vsbg = get_multi_vsbg_img()
-    chat_id = update.message.chat_id
-    mess_id = update.message.message_id
-    bot.send_photo(chat_id=chat_id, reply_to_message_id=mess_id, photo=l_vsbg)
+                   photo=gaitay)
 
 def anh(bot,update):
     gai = get_girl_img()
     update.context.message.reply_photo(photo=gai)
 
-def time(bot, update, job_queue):
-    interval = 86400
-    job_queue.run_repeating(anh, interval=interval, context=update)
-    print("hi")
-    job_queue.run_repeating()
+def nangtho(bot, update):
+    list_nangtho = os.listdir('/home/dungpa/ig_girl')
+    str_nangtho = "/" + '\n/'.join(map(str,list_nangtho))
+    update.message.reply_text('''Danh sách các nàng ther:\n {}
+    \nFor have eat no ? :)'''.format(str_nangtho))
+
+def get_nangtho(bot,update):
+    chat_id = update.message.chat_id
+    mess_id = update.message.message_id
+    cmd = update["message"]["text"]
+    # name_folder = cmd.split("/")[1]
+    imgs = get_image_local("/home/dungpa/ig_girl"+cmd)
+    bot.send_photo(chat_id=chat_id,reply_to_message_id=mess_id, photo=open(imgs,"rb"))
 
 def main():
     TOKEN = data["telegram"]["token_quote"]
@@ -274,12 +268,12 @@ def main():
     dp = updater.dispatcher
     start_handler = CommandHandler('start', start)
     dp.add_handler(CommandHandler('help', help))
+    dp.add_handler(CommandHandler('nangtho', nangtho))
+    dp.add_handler(CommandHandler(os.listdir('/home/dungpa/ig_girl'), get_nangtho))
     dp.add_handler(CommandHandler(["girl", "gái","gaidep","girlxinh","lady","women", "woman","gaixinh","xinh"], girl))
     dp.add_handler(CommandHandler(['vsbg', 'sexygirl', 'sexylady','gaingon'], vsbg))
     dp.add_handler(CommandHandler(['korea', 'korean', 'gaihan',"gáihàn"], korea))
     dp.add_handler(CommandHandler(['gáitây', 'gaitay'], gaitay))
-    dp.add_handler(MessageHandler(Filters.text, time, pass_job_queue=True))
-
     dp.add_handler(start_handler)
     # start the bot
     updater.start_polling()
