@@ -5,11 +5,11 @@ import requests
 import redis
 from yaml import Loader
 from yaml import load
-from flickrapi import FlickrAPI
-from telegram.ext import Updater, CommandHandler, InlineQueryHandler, MessageHandler, Filters
-from telegram import ParseMode,  ReplyKeyboardMarkup
+# from flickrapi import FlickrAPI
+from telegram.ext import Updater, CommandHandler
+from telegram import ReplyKeyboardMarkup
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import Flow, InstalledAppFlow
+from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 
@@ -248,19 +248,19 @@ def anh(bot,update):
     gai = get_girl_img()
     update.context.message.reply_photo(photo=gai)
 
-def nangtho(bot, update):
-    list_nangtho = os.listdir('/home/dungpa/ig_girl')
-    str_nangtho = "/" + '\n/'.join(map(str,list_nangtho))
-    update.message.reply_text('''Danh sách các nàng ther:\n {}
-    \nFor have eat no ? :)'''.format(str_nangtho))
+# def nangtho(bot, update):
+#     list_nangtho = os.listdir('/home/dungpa/ig_girl')
+#     str_nangtho = "/" + '\n/'.join(map(str,list_nangtho))
+#     update.message.reply_text('''Danh sách các nàng ther:\n {}
+#     \nFor have eat no ? :)'''.format(str_nangtho))
 
-def get_nangtho(bot,update):
-    chat_id = update.message.chat_id
-    mess_id = update.message.message_id
-    cmd = update["message"]["text"]
-    # name_folder = cmd.split("/")[1]
-    imgs = get_image_local("/home/dungpa/ig_girl"+cmd)
-    bot.send_photo(chat_id=chat_id,reply_to_message_id=mess_id, photo=open(imgs,"rb"))
+# def get_nangtho(bot,update):
+#     chat_id = update.message.chat_id
+#     mess_id = update.message.message_id
+#     cmd = update["message"]["text"]
+#     # name_folder = cmd.split("/")[1]
+#     imgs = get_image_local("/home/dungpa/ig_girl"+cmd)
+#     bot.send_photo(chat_id=chat_id,reply_to_message_id=mess_id, photo=open(imgs,"rb"))
 
 def main():
     TOKEN = data["telegram"]["token_quote"]
@@ -268,9 +268,10 @@ def main():
     dp = updater.dispatcher
     start_handler = CommandHandler('start', start)
     dp.add_handler(CommandHandler('help', help))
-    dp.add_handler(CommandHandler('nangtho', nangtho))
-    dp.add_handler(CommandHandler(os.listdir('/home/dungpa/ig_girl'), get_nangtho))
-    dp.add_handler(CommandHandler(["girl", "gái","gaidep","girlxinh","lady","women", "woman","gaixinh","xinh"], girl))
+    # dp.add_handler(CommandHandler('nangtho', nangtho))
+    # dp.add_handler(CommandHandler(os.listdir('/home/dungpa/ig_girl'), get_nangtho))
+    dp.add_handler(CommandHandler(["girl", "gái","gaidep","girlxinh",
+                                    "lady","women", "woman","gaixinh","xinh"], girl))
     dp.add_handler(CommandHandler(['vsbg', 'sexygirl', 'sexylady','gaingon'], vsbg))
     dp.add_handler(CommandHandler(['korea', 'korean', 'gaihan',"gáihàn"], korea))
     dp.add_handler(CommandHandler(['gáitây', 'gaitay'], gaitay))
