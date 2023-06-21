@@ -13,8 +13,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 
-with open("./secret.yaml","r") as yml_file:
-    data = load(yml_file, Loader=Loader)
+# with open("./secret.yaml","r") as yml_file:
+#     data = load(yml_file, Loader=Loader)
 
 # connect redis
 HOST = data["redis"]["host"]
@@ -263,7 +263,8 @@ def anh(bot,update):
 #     bot.send_photo(chat_id=chat_id,reply_to_message_id=mess_id, photo=open(imgs,"rb"))
 
 def main():
-    TOKEN = data["telegram"]["token_quote"]
+    # TOKEN = data["telegram"]["token_quote"]
+    TOKEN = "1339111350:AAFGUd_GP1jTpQ-ZGwXx9boBer6Z3p-azHM"
     updater = Updater(TOKEN)
     dp = updater.dispatcher
     start_handler = CommandHandler('start', start)
