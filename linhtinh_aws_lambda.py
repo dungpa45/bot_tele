@@ -1,5 +1,5 @@
 import json, traceback, os, io
-import requests, re
+import requests, re, random
 import ipaddress
 from googletrans import Translator
 
@@ -18,11 +18,14 @@ def dict_to_text(dictionary):
     return text
 
 
-def send_photo(image_url,chat_id):
+def send_photo(image_url,chat_id,cap=None):
     response = requests.get(image_url)
     photo = io.BytesIO(response.content)
     files = {"photo": photo}
-    tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
+    if cap is None:
+        tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
+    else:
+        tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}&caption={cap}&parse_mode=Markdown"
     requests.post(tele_url,files=files)
 
 def get_quote():
@@ -50,7 +53,7 @@ def get_n_send_fact(chat_id):
         fact = content[0]['fact']
         vn_fact = translate_vn(fact)
         url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': vn_fact}
+        payload = {'parse_mode':'Markdown','text': fact +"\n\n"+ vn_fact}
         requests.post(url,json=payload)
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
@@ -63,7 +66,7 @@ def get_n_send_useless_fact(chat_id):
         useless = content["text"]
         vn_fact = translate_vn(useless)
         url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': vn_fact}
+        payload = {'parse_mode':'Markdown','text': useless +"\n\n"+ vn_fact}
         requests.post(url,json=payload)
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
@@ -73,7 +76,9 @@ def send_text(text_input,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     if "help" in text_input or "/help" in text_input or "/start" in text_input:
         payload = {'text': '''Gõ /quote để xem một câu quote
-        \nGõ /fact để xem fact /uselessfact 
+        \nGõ /fact để xem fact /uselessfact
+        \nGõ /meal để xem một món ăn ngẫu nhiên
+        \nGõ /trua_nay_an_gi để coi ăn cái chi
         \nNhập đường link bất kỳ sẽ cho ra một link rút gọn'''}
     else:
         payload = {'text': "hổng hiểu gì hết trơn :)))\nGõ /help hoặc /start nha"}
@@ -145,6 +150,60 @@ def validate_ip_address(ip_address):
     else:
         return False
 
+def info_meals(dictionary):
+    # text = ''
+    m={}
+    d={}
+    for key, value in dictionary.items():   
+        if value in ['',' ',None]:
+            continue
+        else:   
+            if 'strIngredient' in key:
+                m.update({key:value})
+            elif 'strMeasure' in key:
+                new_key = key.replace('strMeasure','strIngredient')
+                d.update({new_key:value})
+    new_d = dict((m.get(k, k), v) for (k, v) in d.items())
+    nguyen_lieu = dict_to_text(new_d)
+    try:
+        text = f'''Tên: {dictionary["strMeal"]}
+Loại: {dictionary["strCategory"]} 
+Khu vực: {dictionary["strArea"]}
+*Nguyên liệu:* 
+{nguyen_lieu}
+Link Youtube: {dictionary["strYoutube"]}'''
+        img_link = dictionary["strMealThumb"]
+        guide = f'''*Hướng dẫn:* {dictionary["strInstructions"]}
+\nNguồn: {dictionary['strSource']}'''
+    except Exception:
+        traceback.print_exc()
+    return [text,img_link,guide]
+
+def send_meals(chat_id):
+    res = requests.get("https://www.themealdb.com/api/json/v1/1/random.php")
+    if res.status_code == requests.codes.ok:
+        l_res = res.json()
+        data_meal = l_res["meals"][0]
+        l_info_meal = info_meals(data_meal)
+        print(l_info_meal[0])
+        # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+        # payload = {'parse_mode':'Markdown','text': text_meal}
+        # requests.post(url,json=payload)
+        send_photo(l_info_meal[1],chat_id,l_info_meal[0])
+        url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+        payload = {'parse_mode':'Markdown','text': l_info_meal[2]}
+        requests.post(url,json=payload)
+
+    else:
+        error = "StatusCode: " + res.status_code +" "+ res.text
+        return error
+
+def an_trua(chat_id):
+    l_antrua = ['cơm rang', 'bún vịt', 'phở vịt quay', 'bún đậu', 'xôi', 'bánh mỳ', 'bún pò', 'cơm thố', 'phở bò']
+    mon = random.choice(l_antrua)
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    payload = {'parse_mode':'Markdown','text':mon}
+    requests.post(url,json=payload)
 
 def lambda_handler(event, context):
     print(event)
@@ -176,6 +235,12 @@ def lambda_handler(event, context):
             return {"statusCode": 200}
         elif "/uselessfact" in user_text:
             get_n_send_useless_fact(chat_id)
+            return {"statusCode": 200}
+        elif "/meal" in user_text:
+            send_meals(chat_id)
+            return {"statusCode": 200}
+        elif "/trua_nay_an_gi" in user_text:
+            an_trua(chat_id)
             return {"statusCode": 200}
         else:
             send_text(user_text,chat_id)
