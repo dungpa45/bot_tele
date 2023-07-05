@@ -1,6 +1,6 @@
 import json, traceback, os, io
 import requests, re, random
-import ipaddress
+import ipaddress, feedparser
 from googletrans import Translator
 from requests.exceptions import HTTPError
 
@@ -15,6 +15,27 @@ link_subnet = 'https://networkcalc.com/api/ip/'
 link_meals = "https://www.themealdb.com/api/json/v1/1/random.php"
 link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
 link_country = 'https://restcountries.com/v3.1/independent?status=true'
+link_new_rss = "https://vnexpress.net/rss/tin-moi-nhat.rss"
+
+modau = '''Gõ /quote để xem một câu quote
+Gõ /fact để xem fact /uselessfact xem face vô tri
+Gõ /meal để xem một món ăn ngẫu nhiên
+Gõ /cocktail để xem một cốc têu ngẫu nhiên
+Gõ /an_trua /antrua để coi ăn cái chi
+Gõ /country để xem thông tin một quốc gia bất kỳ
+Để xem vài tin tức mới nhất gõ /news số_tin (vd: /news 3)
+Nhập đường link bất kỳ sẽ cho ra một link rút gọn
+Nhập IP hoặc CIDR để kiểm tra'''
+
+meme_shiba = [
+    "CAACAgIAAxkBAAEjQcdko_dV3sjlt4gfzMnxPwH0MUFHfwACFAADBc7CLQViulNpIrtiLwQ",
+    "CAACAgIAAxkBAAEjQetko_pCzXbPPvGI4mOnlpgseNzbEwACRwADBc7CLQABCW2lqqWMJS8E",
+    "CAACAgIAAxkBAAEjQeVko_o1Mu0iAesAAcncnhIlGk38_5cAAhYAAwXOwi2GqrCk_LK3PS8E",
+    "CAACAgIAAxkBAAEjQe5ko_pZGT837ytT2HsacqklosOd1wACIBIAAkl9SEg1uJaZLbP0Ui8E",
+    "CAACAgIAAxkBAAEjSqdkpOUoeyHXMDZLWSQyKR5sc45TvAACDwADBc7CLdU09hfXHyxULwQ",
+    "CAACAgUAAxkBAAEjSrBkpOVo-aEqJEjbihnv87RltH38_QACzwMAAmf4EVRVNziyEn7XIi8E",
+    "CAACAgIAAxkBAAEjSrNkpOV4vVp6KFZEy4nY_kuTOsYSqQACGQ4AAr180UpeHEVsns7Gxi8E"
+]
 
 def translate_vn(fact):
     translator = Translator()
@@ -90,14 +111,7 @@ def get_n_send_useless_fact(chat_id):
 def send_text(text_input,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     if "help" in text_input or "/help" in text_input or "/start" in text_input:
-        payload = {'text': 
-'''Gõ /quote để xem một câu quote
-Gõ /fact để xem fact /uselessfact xem face vô tri
-Gõ /meal để xem một món ăn ngẫu nhiên
-Gõ /cocktail để xem một cốc têu ngẫu nhiên
-Gõ /an_trua /antrua để coi ăn cái chi
-Gõ /country để xem thông tin một quốc gia bất kỳ
-Nhập đường link bất kỳ sẽ cho ra một link rút gọn'''}
+        payload = {'text': modau}
     else:
         payload = {'text': "hổng hiểu gì hết trơn :)))\nGõ /help hoặc /start nha"}
     requests.post(url,json=payload)
@@ -114,6 +128,7 @@ def send_error(error_text,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     payload = {'text': error_text}
     requests.post(url,json=payload)
+    return {"statusCode": 200}
 
 def short_link(chat_id, text_input):
     data = {'url': text_input}
@@ -317,6 +332,36 @@ def send_country(chat_id):
         error = "StatusCode: " + res.status_code +" "+ res.text
         return error
 
+def get_news(num):
+    news_feed = feedparser.parse(link_new_rss)
+    entry = news_feed["entries"]
+    l_news = random.sample(entry,num)
+    text_info = ""
+    for n in l_news:
+        text_info += n['title']+"\n"+n['link']+"\n\n"
+    return text_info
+
+def send_news(chat_id,user_text):
+    l_rep_sai = ["Nhập số <10 cơ mà má","Nhập lại số <10 đê :)"]
+    if "/news" == user_text:
+        text_info = get_news(1)
+    else:
+        vesau = user_text.split(" ")[1]
+        try:
+            num = int(vesau)
+            if num > 10:
+                text_info = random.choice(l_rep_sai)
+            else:
+                text_info = get_news(num)
+        except ValueError:
+            # rep = random.choice(l_rep_sai)
+            # send_error(rep,chat_id)
+            text_info = random.choice(l_rep_sai)
+        
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    payload = {'parse_mode':'Markdown','text': text_info}
+    requests.post(url,json=payload)
+
 def lambda_handler(event, context):
     print(event)
     try:
@@ -360,6 +405,9 @@ def lambda_handler(event, context):
         elif user_text in ["/country","/quocgia"]:
             send_country(chat_id)
             return {"statusCode": 200}
+        elif "/news" in user_text:
+            send_news(chat_id,user_text)
+            return {"statusCode": 200}
         else:
             send_text(user_text,chat_id)
             return {"statusCode": 200}
@@ -367,7 +415,5 @@ def lambda_handler(event, context):
         traceback.print_exc()
         error = traceback.format_exc()
         send_text(error,chat_id)
-        return {
-            "statusCode": 200
-        }
+        return {"statusCode": 200}
     
