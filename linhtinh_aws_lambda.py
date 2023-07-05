@@ -17,13 +17,13 @@ link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
 link_country = 'https://restcountries.com/v3.1/independent?status=true'
 link_new_rss = "https://vnexpress.net/rss/tin-moi-nhat.rss"
 
-modau = '''Gõ /quote để xem một câu quote
-Gõ /fact để xem fact /uselessfact xem face vô tri
-Gõ /meal để xem một món ăn ngẫu nhiên
-Gõ /cocktail để xem một cốc têu ngẫu nhiên
-Gõ /an_trua /antrua để coi ăn cái chi
-Gõ /country để xem thông tin một quốc gia bất kỳ
-Để xem vài tin tức mới nhất gõ /news số_tin (vd: /news 3)
+modau = '''/quote để xem một câu quote
+/fact để xem fact /uselessfact xem face vô tri
+/meal để xem một món ăn ngẫu nhiên
+/cocktail để xem một cốc têu ngẫu nhiên
+/an_trua /antrua để coi ăn cái chi
+/country để xem thông tin một quốc gia bất kỳ
+/news số_tin (số tin <10) Để xem vài tin tức mới nhất (vd: /news 3)
 Nhập đường link bất kỳ sẽ cho ra một link rút gọn
 Nhập IP hoặc CIDR để kiểm tra'''
 
@@ -112,17 +112,26 @@ def send_text(text_input,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     if "help" in text_input or "/help" in text_input or "/start" in text_input:
         payload = {'text': modau}
+    elif "edited_mess" in text_input:
+        payload = {'text': 'Đừng sửa tin nhắn, vì nó ko có ý nghĩa gì'}
     else:
         payload = {'text': "hổng hiểu gì hết trơn :)))\nGõ /help hoặc /start nha"}
     requests.post(url,json=payload)
 
 def send_non_text(kind,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    
     if kind == "sticker":
         payload = {'text': "thả sticker làm gì hử :)))\nGõ /help hoặc /start đi"}
     elif kind == "animation":
         payload = {'text': "gửi ảnh gif cc à :)))\nĐm /help hoặc /start và làm theo"}
     requests.post(url,json=payload)
+    send_meme(chat_id)
+
+def send_meme(chat_id):
+    url_sticker = f'https://api.telegram.org/bot{TOKEN}/sendSticker?chat_id={chat_id}'
+    sticker = random.choice(meme_shiba)
+    requests.post(url_sticker,json={"sticker":sticker})
 
 def send_error(error_text,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
@@ -184,7 +193,6 @@ def validate_ip_address(ip_address):
         return False
 
 def info_meals(dictionary):
-    # text = ''
     m={}
     d={}
     for key, value in dictionary.items():   
@@ -229,7 +237,6 @@ def send_meals(chat_id):
         return error
 
 def info_drinks(dictionary):
-    # text = ''
     m={}
     d={}
     for key, value in dictionary.items():   
@@ -351,23 +358,29 @@ def send_news(chat_id,user_text):
             num = int(vesau)
             if num > 10:
                 text_info = random.choice(l_rep_sai)
+                send_meme(chat_id)
             else:
                 text_info = get_news(num)
         except ValueError:
-            # rep = random.choice(l_rep_sai)
-            # send_error(rep,chat_id)
             text_info = random.choice(l_rep_sai)
-        
+            send_meme(chat_id)
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     payload = {'parse_mode':'Markdown','text': text_info}
     requests.post(url,json=payload)
 
 def lambda_handler(event, context):
-    print(event)
+    # print(event)
     try:
         body=json.loads(event['body'])
         print(body)
-        chat_id = body['message']['chat']['id']
+
+        if "edited_message" in body:
+            chat_id = body['edited_message']['chat']['id']
+            send_text("edited_mess",chat_id)
+            return {"statusCode": 200}
+        else:
+            chat_id = body['message']['chat']['id']  
+        
         if 'sticker' in body['message']:
             # sticker = body['message']['sticker']
             send_non_text('sticker',chat_id)
