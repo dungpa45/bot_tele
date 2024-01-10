@@ -1,41 +1,14 @@
 import json, traceback, os, io
-import requests, re, random
+import requests, re, random, logging
 import ipaddress, feedparser
 from googletrans import Translator
 from requests.exceptions import HTTPError
+from var_file import *
+from weather import *
 
-TOKEN = os.environ["TOKEN"]
-API_NINJA = os.environ["API_NINJA"]
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
-link_quote = "https://favqs.com/api/qotd"
-link_fact = 'https://api.api-ninjas.com/v1/facts?limit=1'
-link_uselessfact = "https://uselessfacts.jsph.pl/api/v2/facts/random"
-link_shorten = 'https://cleanuri.com/api/v1/shorten'
-link_subnet = 'https://networkcalc.com/api/ip/'
-link_meals = "https://www.themealdb.com/api/json/v1/1/random.php"
-link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
-link_country = 'https://restcountries.com/v3.1/independent?status=true'
-link_new_rss = "https://vnexpress.net/rss/tin-moi-nhat.rss"
-
-modau = '''/quote để xem một câu quote
-/fact để xem fact /uselessfact xem face vô tri
-/meal để xem một món ăn ngẫu nhiên
-/cocktail để xem một cốc têu ngẫu nhiên
-/an_trua /antrua để coi ăn cái chi
-/country để xem thông tin một quốc gia bất kỳ
-/news số_tin (số tin <10) Để xem vài tin tức mới nhất (vd: /news 3)
-Nhập đường link bất kỳ sẽ cho ra một link rút gọn
-Nhập IP hoặc CIDR để kiểm tra'''
-
-meme_shiba = [
-    "CAACAgIAAxkBAAEjQcdko_dV3sjlt4gfzMnxPwH0MUFHfwACFAADBc7CLQViulNpIrtiLwQ",
-    "CAACAgIAAxkBAAEjQetko_pCzXbPPvGI4mOnlpgseNzbEwACRwADBc7CLQABCW2lqqWMJS8E",
-    "CAACAgIAAxkBAAEjQeVko_o1Mu0iAesAAcncnhIlGk38_5cAAhYAAwXOwi2GqrCk_LK3PS8E",
-    "CAACAgIAAxkBAAEjQe5ko_pZGT837ytT2HsacqklosOd1wACIBIAAkl9SEg1uJaZLbP0Ui8E",
-    "CAACAgIAAxkBAAEjSqdkpOUoeyHXMDZLWSQyKR5sc45TvAACDwADBc7CLdU09hfXHyxULwQ",
-    "CAACAgUAAxkBAAEjSrBkpOVo-aEqJEjbihnv87RltH38_QACzwMAAmf4EVRVNziyEn7XIi8E",
-    "CAACAgIAAxkBAAEjSrNkpOV4vVp6KFZEy4nY_kuTOsYSqQACGQ4AAr180UpeHEVsns7Gxi8E"
-]
 
 def translate_vn(fact):
     translator = Translator()
@@ -47,6 +20,18 @@ def dict_to_text(dictionary):
     for key, value in dictionary.items():
         text += f"{key}: {value}\n"
     return text
+
+def post_tele(chat_id,s_text):
+    # s_text: content to send
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    payload = {'parse_mode':'Markdown','text': s_text}
+    requests.post(url,json=payload)
+
+def post_error(error_text,chat_id):
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    payload = {'text': "API error :( \n)"+error_text}
+    requests.post(url,json=payload)
+    return {"statusCode": 200}
 
 def send_photo(image_url,chat_id,cap=None):
     response = requests.get(image_url)
@@ -64,23 +49,23 @@ def send_photo(image_url,chat_id,cap=None):
         payload = {'text': "Có lỗi rồi:\n" + e.response.text}
         requests.post(url,json=payload)
 
-def get_quote():
+def get_n_send_quote(chat_id):
     res = requests.get(link_quote)
     if res.status_code == requests.codes.ok:
         data_quote = res.json()
         quote = data_quote["quote"]["body"]
         author = data_quote["quote"]["author"]
         message = '_"'+quote+'"_'+"\n\n"+'*'+author+'*'
-        return message
+        post_tele(chat_id,message)
     else:
         error = "StatusCode: " + str(res.status_code) +" "+ res.text
-        return error
+        post_error(error,chat_id)
 
-def send_quote(chat_id):
-    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    quote = get_quote()
-    payload = {'parse_mode':'Markdown','text': quote}
-    requests.post(url,json=payload)
+# def send_quote(chat_id):
+#     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+#     quote = get_quote()
+#     payload = {'parse_mode':'Markdown','text': quote}
+#     requests.post(url,json=payload)
 
 def get_n_send_fact(chat_id):
     res = requests.get(link_fact, headers={'X-Api-Key':API_NINJA})
@@ -88,12 +73,10 @@ def get_n_send_fact(chat_id):
         content = res.json()
         fact = content[0]['fact']
         vn_fact = translate_vn(fact)
-        url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': fact +"\n\n"+ vn_fact}
-        requests.post(url,json=payload)
+        post_tele(chat_id, fact +"\n\n"+ vn_fact)
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
-        return error
+        post_error(error,chat_id)
 
 def get_n_send_useless_fact(chat_id):
     res = requests.get(link_uselessfact)
@@ -101,12 +84,10 @@ def get_n_send_useless_fact(chat_id):
         content = res.json()
         useless = content["text"]
         vn_fact = translate_vn(useless)
-        url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': useless +"\n\n"+ vn_fact}
-        requests.post(url,json=payload)
+        post_tele(chat_id, useless +"\n\n"+ vn_fact)
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
-        return error
+        post_error(error,chat_id)
 
 def send_text(text_input,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
@@ -123,7 +104,7 @@ def send_non_text(kind,chat_id):
     
     if kind == "sticker":
         payload = {'text': "thả sticker làm gì hử :)))\nGõ /help hoặc /start đi"}
-    elif kind == "animation":
+    elif kind == "animation" or "photo":
         payload = {'text': "gửi ảnh gif cc à :)))\nĐm /help hoặc /start và làm theo"}
     requests.post(url,json=payload)
     send_meme(chat_id)
@@ -133,20 +114,16 @@ def send_meme(chat_id):
     sticker = random.choice(meme_shiba)
     requests.post(url_sticker,json={"sticker":sticker})
 
-def send_error(error_text,chat_id):
-    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    payload = {'text': error_text}
-    requests.post(url,json=payload)
-    return {"statusCode": 200}
 
 def short_link(chat_id, text_input):
     data = {'url': text_input}
     payload=requests.post(link_shorten,data)
     short_url=payload.json()['result_url']
     print("The short url is : {}".format(short_url))
-    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    payload = {'text': short_url}
-    requests.post(url,json=payload)
+    # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    # payload = {'text': short_url}
+    # requests.post(url,json=payload)
+    post_tele(chat_id,short_url)
 
 def get_subnet(subnet):
     res = requests.get(link_subnet+subnet)
@@ -229,12 +206,14 @@ def send_meals(chat_id):
         data_meal = l_res["meals"][0]
         l_info_meal = info_meals(data_meal)
         send_photo(l_info_meal[1],chat_id,l_info_meal[0])
-        url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': l_info_meal[2]}
-        requests.post(url,json=payload)
+        # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+        # payload = {'parse_mode':'Markdown','text': l_info_meal[2]}
+        # requests.post(url,json=payload)
+        post_tele(chat_id,l_info_meal[2])
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
-        return error
+        # return error
+        post_error(error,chat_id)
 
 def info_drinks(dictionary):
     m={}
@@ -272,20 +251,23 @@ def send_cocktail(chat_id):
         data_drink = l_res["drinks"][0]
         l_info_drink = info_drinks(data_drink)
         send_photo(l_info_drink[1],chat_id,l_info_drink[0])
-        url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': l_info_drink[2]}
-        requests.post(url,json=payload)
+        # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+        # payload = {'parse_mode':'Markdown','text': l_info_drink[2]}
+        # requests.post(url,json=payload)
+        post_tele(chat_id,l_info_meal[2])
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
-        return error
+        # return error
+        post_error(error,chat_id)
 
 def an_trua(chat_id):
-    l_antrua = ['cơm rang', 'bún vịt', 'phở vịt quay', 'bún đậu', 'xôi', 'bún chả'
+    l_antrua = ['cơm rang', 'bún vịt', 'cơm rang ngan', 'bún đậu', 'xôi', 'bún chả',
                  'bánh mỳ', 'bún pò', 'cơm thố', 'phở pò','cơm trộn','nem nướng']
     mon = random.choice(l_antrua)
-    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    payload = {'parse_mode':'Markdown','text':mon}
-    requests.post(url,json=payload)
+    # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    # payload = {'parse_mode':'Markdown','text':mon}
+    # requests.post(url,json=payload)
+    post_tele(chat_id,mon)
 
 def get_country(country):
     name = country['name']['common']
@@ -301,7 +283,11 @@ def get_country(country):
     l_lang = [val for key, val in country['languages'].items()]
     lang = ", ".join(l_lang)
     timezone = ", ".join(country["timezones"])
-    border = ", ".join(country["borders"])
+    try:
+        bor = country["borders"]
+        border = ", ".join(country["borders"])
+    except Exception:
+        border = ", khum"
     area = country['area']
     pop = country['population']
     map = country['maps']['googleMaps']
@@ -332,12 +318,14 @@ def send_country(chat_id):
         l_res = res.json()
         country = random.choice(l_res)
         text_info = get_country(country)
-        url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'parse_mode':'Markdown','text': text_info}
-        requests.post(url,json=payload)
+        # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+        # payload = {'parse_mode':'Markdown','text': text_info}
+        # requests.post(url,json=payload)
+        post_tele(chat_id,text_info)
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
-        return error
+        # return error
+        post_error(error,chat_id)
 
 def get_news(num):
     news_feed = feedparser.parse(link_new_rss)
@@ -364,15 +352,18 @@ def send_news(chat_id,user_text):
         except ValueError:
             text_info = random.choice(l_rep_sai)
             send_meme(chat_id)
-    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    payload = {'parse_mode':'Markdown','text': text_info}
-    requests.post(url,json=payload)
+    # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
+    # payload = {'parse_mode':'Markdown','text': text_info}
+    # requests.post(url,json=payload)
+    post_tele(chat_id,text_info)
 
 def lambda_handler(event, context):
-    # print(event)
+    logger.info(json.dumps(event))
+    
     try:
         body=json.loads(event['body'])
-        print(body)
+        print("duoi day la body")
+        logger.info(json.dumps(body))
 
         if "edited_message" in body:
             chat_id = body['edited_message']['chat']['id']
@@ -398,7 +389,7 @@ def lambda_handler(event, context):
             short_link(chat_id,user_text)
             return {"statusCode": 200}
         elif "/quote" in user_text:
-            send_quote(chat_id)
+            get_n_send_quote(chat_id)
             return {"statusCode": 200}
         elif "/fact" in user_text:
             get_n_send_fact(chat_id)
@@ -421,12 +412,17 @@ def lambda_handler(event, context):
         elif "/news" in user_text:
             send_news(chat_id,user_text)
             return {"statusCode": 200}
+            return {"statusCode": 200}
+        elif "/weather" in user_text:
+            send_weather(chat_id)
+            return {"statusCode": 200}
         else:
             send_text(user_text,chat_id)
             return {"statusCode": 200}
     except Exception:
         traceback.print_exc()
         error = traceback.format_exc()
-        send_text(error,chat_id)
+        # send_text(error,chat_id)
+        print("loi day")
+        print(error)
         return {"statusCode": 200}
-    
