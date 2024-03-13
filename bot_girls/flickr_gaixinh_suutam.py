@@ -3,18 +3,12 @@ import os, json, random
 import pickle
 import requests
 import redis
-from yaml import Loader
-from yaml import load
-# from flickrapi import FlickrAPI
 from telegram.ext import Updater, CommandHandler
 from telegram import ReplyKeyboardMarkup
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-
-# with open("./secret.yaml","r") as yml_file:
-#     data = load(yml_file, Loader=Loader)
 
 # connect redis
 HOST = data["redis"]["host"]
