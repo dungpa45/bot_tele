@@ -1,6 +1,7 @@
 import json, traceback, os, io
 import requests, re, random, logging
 import ipaddress, feedparser
+import xmltodict
 from googletrans import Translator
 from requests.exceptions import HTTPError
 from var_file import *
@@ -9,6 +10,12 @@ from weather import *
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
+def get_day_name(date_str):
+    # Parse the date string into a datetime object
+    date_obj = datetime.strptime(date_str, '%d-%m-%Y')
+    # Get the day name from the datetime object
+    day_name = date_obj.strftime('%A')
+    return day_name
 
 def translate_vn(fact):
     translator = Translator()
@@ -158,7 +165,9 @@ def send_network_info(text_input,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     res = valid_ip_or_cidr(text_input)
     payload = {'text': res}
+    # print(res)
     requests.post(url,json=payload)
+    # post_tele(chat_id,res)
 
 def validate_ip_address(ip_address):
     # Regular expression pattern for IP address validation
@@ -337,7 +346,7 @@ def get_news(num):
     return text_info
 
 def send_news(chat_id,user_text):
-    l_rep_sai = ["Nhập số <10 cơ mà má","Nhập lại số <10 đê :)"]
+    l_rep_sai = ["Nhập số <=10 cơ mà má","Nhập lại số <=10 đê :)"]
     if "/news" == user_text:
         text_info = get_news(1)
     else:
@@ -356,6 +365,50 @@ def send_news(chat_id,user_text):
     # payload = {'parse_mode':'Markdown','text': text_info}
     # requests.post(url,json=payload)
     post_tele(chat_id,text_info)
+
+def send_goldprice(chat_id):
+    res_sjc = requests.get(link_vang_sjc)
+    res_btmc = requests.get(link_vang_btmc)
+    if res_btmc.status_code == requests.codes.ok and res_sjc.status_code == requests.codes.ok:
+        l_gold_price = res_btmc.json()['DataList']["Data"][:10]
+        n=1
+        for gold in l_gold_price:
+            ten_vang = gold["@n_"+str(n)]
+            if ten_vang == "TRANG SỨC BẰNG VÀNG RỒNG THĂNG LONG 999.9 (Vàng BTMC)":
+                print(gold)
+                message = "🌎 Giá thế giới: " +gold["@pt_"+str(n)] + "VND\n\nVàng bảo tín minh châu:\nGiá mua: "+gold["@pb_"+str(n)]+" VND\nGía bán: "+gold["@ps_"+str(n)]+" VND\n\n"
+                break
+            else:
+                n+=1
+                continue
+        d_vang = xmltodict.parse(res_sjc.content)
+        l_vang_city = d_vang['root']['ratelist']['city']
+        for vang in l_vang_city:
+            if vang['@name'] == "Hà Nội":
+                message2 = vang["item"]["@type"]+":\nGiá mua: "+vang["item"]["@buy"]+".000 VND\nGía bán: "+vang["item"]["@sell"]+".000 VND"
+        post_tele(chat_id,message+message2)
+    else:
+        error = "StatusCode: " + str(res_btmc.status_code) +" "+ res_btmc.text
+        error2 = "StatusCode: " + str(res_sjc.status_code) +" "+ res_sjc.text
+        post_error(error+error2,chat_id)
+
+def send_xsmb(chat_id):
+    res = requests.get(link_xsmb)
+    if res.status_code == requests.codes.ok:
+        response = res.json()
+        kq = response['results']
+        date = response['time']
+        dayname = get_day_name(date)
+        head="Kết quả xổ số miền bắc *("+ dayname +" "+date+"*)\n\n"
+        mess=''
+        for k,v in kq.items():
+            s = ' - '.join(str(x) for x in v)
+            mess += k +": "+ s + "\n"
+        message = head+mess+"\nĐề: *"+kq["ĐB"][0][-2:]+"*"
+        post_tele(chat_id,message)
+    else:
+        error = "StatusCode: " + res.status_code +" "+ res.text
+        post_error(error,chat_id)
 
 def lambda_handler(event, context):
     logger.info(json.dumps(event))
@@ -416,6 +469,12 @@ def lambda_handler(event, context):
         elif "/weather" in user_text:
             send_weather(chat_id)
             return {"statusCode": 200}
+        elif "/gold" in user_text:
+            send_goldprice(chat_id)
+            return {"statusCode": 200}            
+        elif "/xsmb" in user_text:
+            send_xsmb(chat_id)
+            return {"statusCode": 200}            
         else:
             send_text(user_text,chat_id)
             return {"statusCode": 200}

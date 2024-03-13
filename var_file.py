@@ -14,26 +14,31 @@ link_meals = "https://www.themealdb.com/api/json/v1/1/random.php"
 link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
 link_country = 'https://restcountries.com/v3.1/independent?status=true'
 link_new_rss = "https://vnexpress.net/rss/tin-moi-nhat.rss"
+link_vang_sjc = 'https://sjc.com.vn/xml/tygiavang.xml'
+link_vang_btmc = 'http://api.btmc.vn/api/BTMCAPI/getpricebtmc?key=3kd8ub1llcg9t45hnoh8hmn7t5kc2v'
+link_xsmb = "https://api-xsmb.cyclic.app/api/v1"
 
 modau = '''/quote để xem một câu quote
-/fact để xem fact /uselessfact xem face vô tri
+/fact để xem fact /uselessfact xem fact vô tri
 /meal để xem một món ăn ngẫu nhiên
 /cocktail để xem một cốc têu ngẫu nhiên
-/an_trua /antrua để coi ăn cái chi
+/an_trua hay /antrua để coi ăn cái chi
 /country để xem thông tin một quốc gia bất kỳ
-/news số_tin (số tin <10) Để xem vài tin tức mới nhất (vd: /news 3)
+/news số_tin (số tin <=10) xem vài tin tức mới (vd: /news 3)
 /weather Để xem thời tiết
+/gold Xem giá vàng mới
+/xsmb Xem kết quả xsmb mới nhất
 Nhập đường link bất kỳ sẽ cho ra một link rút gọn
 Nhập IP hoặc CIDR để kiểm tra'''
 
 meme_shiba = [
-    "CAACAgIAAxkBAAEjQcdko_dV3sjlt4gfzMnxPwH0MUFHfwACFAADBc7CLQViulNpIrtiLwQ", #cam luc
-    "CAACAgIAAxkBAAEjQetko_pCzXbPPvGI4mOnlpgseNzbEwACRwADBc7CLQABCW2lqqWMJS8E", #bonk
-    "CAACAgIAAxkBAAEjQeVko_o1Mu0iAesAAcncnhIlGk38_5cAAhYAAwXOwi2GqrCk_LK3PS8E", #ban ak
-    "CAACAgIAAxkBAAEjQe5ko_pZGT837ytT2HsacqklosOd1wACIBIAAkl9SEg1uJaZLbP0Ui8E", #slap
-    "CAACAgIAAxkBAAEjSqdkpOUoeyHXMDZLWSQyKR5sc45TvAACDwADBc7CLdU09hfXHyxULwQ", #angry
-    "CAACAgUAAxkBAAEjSrBkpOVo-aEqJEjbihnv87RltH38_QACzwMAAmf4EVRVNziyEn7XIi8E", #bonk animation
-    "CAACAgIAAxkBAAEjSrNkpOV4vVp6KFZEy4nY_kuTOsYSqQACGQ4AAr180UpeHEVsns7Gxi8E" #angry with sad
+    "CAACAgIAAxkBAAEjQcdko_dV3sjlt4gfzMnxPwH0MUFHfwACFAADBc7CLQViulNpIrtiLwQ",
+    "CAACAgIAAxkBAAEjQetko_pCzXbPPvGI4mOnlpgseNzbEwACRwADBc7CLQABCW2lqqWMJS8E",
+    "CAACAgIAAxkBAAEjQeVko_o1Mu0iAesAAcncnhIlGk38_5cAAhYAAwXOwi2GqrCk_LK3PS8E",
+    "CAACAgIAAxkBAAEjQe5ko_pZGT837ytT2HsacqklosOd1wACIBIAAkl9SEg1uJaZLbP0Ui8E",
+    "CAACAgIAAxkBAAEjSqdkpOUoeyHXMDZLWSQyKR5sc45TvAACDwADBc7CLdU09hfXHyxULwQ",
+    "CAACAgUAAxkBAAEjSrBkpOVo-aEqJEjbihnv87RltH38_QACzwMAAmf4EVRVNziyEn7XIi8E",
+    "CAACAgIAAxkBAAEjSrNkpOV4vVp6KFZEy4nY_kuTOsYSqQACGQ4AAr180UpeHEVsns7Gxi8E"
 ]
 
 l_antrua = ['cơm rang', 'bún vịt', 'cơm rang ngan', 'bún đậu', 'xôi', 'bún chả',
