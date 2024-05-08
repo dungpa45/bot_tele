@@ -3,6 +3,8 @@ import requests, re, random, logging
 import ipaddress, feedparser
 import xmltodict
 from googletrans import Translator
+from bs4 import BeautifulSoup
+from tabulate import tabulate
 from requests.exceptions import HTTPError
 from var_file import *
 from weather import *
@@ -263,7 +265,7 @@ def send_cocktail(chat_id):
         # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
         # payload = {'parse_mode':'Markdown','text': l_info_drink[2]}
         # requests.post(url,json=payload)
-        post_tele(chat_id,l_info_meal[2])
+        post_tele(chat_id,l_info_drink[2])
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
         # return error
@@ -336,8 +338,8 @@ def send_country(chat_id):
         # return error
         post_error(error,chat_id)
 
-def get_news(num):
-    news_feed = feedparser.parse(link_new_rss)
+def get_news(num,link_rss):
+    news_feed = feedparser.parse(link_rss)
     entry = news_feed["entries"]
     l_news = random.sample(entry,num)
     text_info = ""
@@ -345,10 +347,12 @@ def get_news(num):
         text_info += n['title']+"\n"+n['link']+"\n\n"
     return text_info
 
-def send_news(chat_id,user_text):
+def send_news(chat_id,user_text,link_news):
     l_rep_sai = ["Nhập số <=10 cơ mà má","Nhập lại số <=10 đê :)"]
     if "/news" == user_text:
-        text_info = get_news(1)
+        text_info = get_news(1,link_news)
+    elif "/aws" == user_text:
+        text_info = get_news(1,link_news)
     else:
         vesau = user_text.split(" ")[1]
         try:
@@ -357,7 +361,7 @@ def send_news(chat_id,user_text):
                 text_info = random.choice(l_rep_sai)
                 send_meme(chat_id)
             else:
-                text_info = get_news(num)
+                text_info = get_news(num,link_news)
         except ValueError:
             text_info = random.choice(l_rep_sai)
             send_meme(chat_id)
@@ -365,32 +369,6 @@ def send_news(chat_id,user_text):
     # payload = {'parse_mode':'Markdown','text': text_info}
     # requests.post(url,json=payload)
     post_tele(chat_id,text_info)
-
-def send_goldprice(chat_id):
-    res_sjc = requests.get(link_vang_sjc)
-    res_btmc = requests.get(link_vang_btmc)
-    if res_btmc.status_code == requests.codes.ok and res_sjc.status_code == requests.codes.ok:
-        l_gold_price = res_btmc.json()['DataList']["Data"][:10]
-        n=1
-        for gold in l_gold_price:
-            ten_vang = gold["@n_"+str(n)]
-            if ten_vang == "TRANG SỨC BẰNG VÀNG RỒNG THĂNG LONG 999.9 (Vàng BTMC)":
-                print(gold)
-                message = "🌎 Giá thế giới: " +gold["@pt_"+str(n)] + "VND\n\nVàng bảo tín minh châu:\nGiá mua: "+gold["@pb_"+str(n)]+" VND\nGía bán: "+gold["@ps_"+str(n)]+" VND\n\n"
-                break
-            else:
-                n+=1
-                continue
-        d_vang = xmltodict.parse(res_sjc.content)
-        l_vang_city = d_vang['root']['ratelist']['city']
-        for vang in l_vang_city:
-            if vang['@name'] == "Hà Nội":
-                message2 = vang["item"]["@type"]+":\nGiá mua: "+vang["item"]["@buy"]+".000 VND\nGía bán: "+vang["item"]["@sell"]+".000 VND"
-        post_tele(chat_id,message+message2)
-    else:
-        error = "StatusCode: " + str(res_btmc.status_code) +" "+ res_btmc.text
-        error2 = "StatusCode: " + str(res_sjc.status_code) +" "+ res_sjc.text
-        post_error(error+error2,chat_id)
 
 def send_xsmb(chat_id):
     res = requests.get(link_xsmb)
@@ -408,6 +386,57 @@ def send_xsmb(chat_id):
         post_tele(chat_id,message)
     else:
         error = "StatusCode: " + res.status_code +" "+ res.text
+        post_error(error,chat_id)
+
+def send_xang(chat_id):
+    response = requests.get(link_xang)
+    if response.status_code == requests.codes.ok:
+        soup = BeautifulSoup(response.content, "html.parser")
+        # Find the table element based on its class or other attributes
+        table = soup.find("table")
+        if table:
+            rows = table.find_all("tr")
+            data = []
+            for row in rows:
+                # Extract data from each row
+                cells = [cell.get_text(strip=True) for cell in row.find_all(["td", "th"])]
+                data.append(cells)
+            mess_table = tabulate(data, headers="firstrow", tablefmt="simple")
+            s_table = f'```\n{mess_table}```'
+            post_tele(chat_id, s_table)
+        else:
+            post_error("not found on the webpage.",chat_id)
+    else:
+        error = "StatusCode: " + response.status_code +" "+ response.text
+        post_error(error,chat_id)
+
+def send_goldprice(chat_id):
+    response = requests.get(link_gold)
+    if response.status_code == requests.codes.ok:
+        res = response.json()
+        update = res['data']['updated_at']
+        time_format = datetime.strptime(update,'%Y-%m-%dT%H:%M:%S.%f%z')
+        time_update = time_format.strftime('%Y-%m-%d %H:%M')
+        data_gold = res['data']['data']['gold']
+        new = data_gold['new']
+        old = data_gold['old']
+        formatted_data = []
+
+        for key, value in new.items():
+            old_buy = old[key]['buy']
+            new_buy = value['buy']
+            old_sell = old[key]['sell']
+            new_sell = value['sell']
+            balance_buy = new_buy - old_buy
+            balance_sell = new_sell - old_sell
+            if value['label'] == "Vàng nhẫn SJC 99,99  1 chỉ, 2 chỉ, 5 chỉ":
+                value['label'] = "Vàng nhẫn SJC 99,99"
+            formatted_data.append([value['label'], f"{value['buy']/1000} {balance_buy:+d}K", f"{value['sell']/1000} {balance_sell:+d}K"])
+        table_mess = tabulate(formatted_data, headers=["Loại", "Mua", "Bán"], tablefmt="simple")
+        s_table = f'```\n{table_mess}```cập nhật lúc: {time_update}'
+        post_tele(chat_id,s_table)
+    else:
+        error = "StatusCode: " + response.status_code +" "+ response.text
         post_error(error,chat_id)
 
 def lambda_handler(event, context):
@@ -463,8 +492,10 @@ def lambda_handler(event, context):
             send_country(chat_id)
             return {"statusCode": 200}
         elif "/news" in user_text:
-            send_news(chat_id,user_text)
+            send_news(chat_id,user_text,link_vnexpress_new)
             return {"statusCode": 200}
+        elif "/aws" in user_text:
+            send_news(chat_id,user_text,link_aws_new)
             return {"statusCode": 200}
         elif "/weather" in user_text:
             send_weather(chat_id)
@@ -474,6 +505,9 @@ def lambda_handler(event, context):
             return {"statusCode": 200}            
         elif "/xsmb" in user_text:
             send_xsmb(chat_id)
+            return {"statusCode": 200}            
+        elif "/xang" in user_text:
+            send_xang(chat_id)
             return {"statusCode": 200}            
         else:
             send_text(user_text,chat_id)
