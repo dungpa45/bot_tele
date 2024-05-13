@@ -4,6 +4,7 @@ TOKEN = os.environ["TOKEN"]
 API_NINJA = os.environ["API_NINJA"]
 API_WEATHER = os.environ["API_WEATHER"]
 API_AIRVISUAL = os.environ["API_AIRVISUAL"]
+header = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"}
 
 link_quote = "https://favqs.com/api/qotd"
 link_fact = 'https://api.api-ninjas.com/v1/facts?limit=1'
@@ -18,6 +19,7 @@ link_aws_new = 'https://aws.amazon.com/blogs/aws/feed/'
 link_gold = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"
 link_xsmb = "https://api-xsmb.cyclic.app/api/v1"
 link_xang = "https://vnexpress.net/chu-de/gia-xang-dau-3026"
+link_transfermark = "https://www.transfermarkt.com/spieler-statistik/wertvollstespieler/marktwertetop?land_id=0&ausrichtung=alle&spielerposition_id=alle&altersklasse=alle&jahrgang=0&kontinent_id=0&plus=1"
 
 modau = '''/quote để xem một câu quote
 /fact để xem fact /uselessfact xem fact vô tri
@@ -30,6 +32,7 @@ modau = '''/quote để xem một câu quote
 /gold Xem giá vàng mới
 /xsmb Xem kết quả xsmb mới nhất
 /xang Xem giá xăng mới cập nhật
+/football_price Xem giá cầu thủ đắt nhất thế giới
 Nhập đường link bất kỳ sẽ cho ra một link rút gọn
 Nhập IP hoặc CIDR để kiểm tra'''
 

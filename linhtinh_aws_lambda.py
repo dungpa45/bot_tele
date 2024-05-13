@@ -431,10 +431,38 @@ def send_goldprice(chat_id):
             balance_sell = new_sell - old_sell
             if value['label'] == "Vàng nhẫn SJC 99,99  1 chỉ, 2 chỉ, 5 chỉ":
                 value['label'] = "Vàng nhẫn SJC 99,99"
-            formatted_data.append([value['label'], f"{value['buy']/1000} {balance_buy:+d}K", f"{value['sell']/1000} {balance_sell:+d}K"])
+            if value['label'] == "Giá vàng thế giới":
+                formatted_data.append([value['label'], f"{value['buy']/1000}$ {round(balance_buy,2)}$", f"{value['sell']/1000}$ {round(balance_sell,2)}$"])
+            else:
+                formatted_data.append([value['label'], f"{value['buy']/1000} {round(balance_buy,2)}K", f"{value['sell']/1000} {round(balance_sell,2)}K"])
         table_mess = tabulate(formatted_data, headers=["Loại", "Mua", "Bán"], tablefmt="simple")
         s_table = f'```\n{table_mess}```cập nhật lúc: {time_update}'
         post_tele(chat_id,s_table)
+    else:
+        error = "StatusCode: " + response.status_code +" "+ response.text
+        post_error(error,chat_id)
+
+def send_football_price(chat_id):
+    response = requests.get(link_transfermark,headers=header)
+    if response.status_code == requests.codes.ok:
+        soup = BeautifulSoup(response.content, "html.parser")
+        # Find the table element based on its class or other attributes
+        table = soup.find("table", class_="items")
+        if table:
+            rows = table.find_all("tr")
+            data = []
+            for row in rows:
+                # Extract data from each row
+                cells = [cell.get_text(strip=True) for cell in row.find_all(["td", "th"])]
+                if len(cells) > 3:
+                    cell_filter = [cells[0],cells[3],cells[5],cells[8]]
+                    data.append(cell_filter)
+            data.pop(0)
+            mess_table = tabulate(data, headers=["#", "Player", "Age", "Market Value"], tablefmt="simple")
+            s_table = f'```\n{mess_table}```'
+            post_tele(chat_id, s_table)
+        else:
+            post_error("not found on the webpage.",chat_id)
     else:
         error = "StatusCode: " + response.status_code +" "+ response.text
         post_error(error,chat_id)
@@ -508,6 +536,9 @@ def lambda_handler(event, context):
             return {"statusCode": 200}            
         elif "/xang" in user_text:
             send_xang(chat_id)
+            return {"statusCode": 200}            
+        elif "/football_price" in user_text:
+            send_football_price(chat_id)
             return {"statusCode": 200}            
         else:
             send_text(user_text,chat_id)
