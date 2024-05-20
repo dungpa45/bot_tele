@@ -1,7 +1,6 @@
 import json, traceback, os, io
 import requests, re, random, logging
 import ipaddress, feedparser
-import xmltodict
 from googletrans import Translator
 from bs4 import BeautifulSoup
 from tabulate import tabulate
