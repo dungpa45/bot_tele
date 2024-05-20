@@ -427,14 +427,17 @@ def send_goldprice(chat_id):
             new_buy = value['buy']
             old_sell = old[key]['sell']
             new_sell = value['sell']
-            balance_buy = new_buy - old_buy
-            balance_sell = new_sell - old_sell
+            balance_buy = round(new_buy - old_buy,2)
+            balance_sell = round(new_sell - old_sell,2)
+            if balance_buy > 0 or balance_sell > 0:
+                balance_buy = "+"+str(balance_buy)
+                balance_sell = "+"+str(balance_sell)
             if value['label'] == "Vàng nhẫn SJC 99,99  1 chỉ, 2 chỉ, 5 chỉ":
                 value['label'] = "Vàng nhẫn SJC 99,99"
             if value['label'] == "Giá vàng thế giới":
-                formatted_data.append([value['label'], f"{value['buy']/1000}$ {round(balance_buy,2)}$", f"{value['sell']/1000}$ {round(balance_sell,2)}$"])
+                formatted_data.append([value['label'], f"{round(value['buy'])}$ {balance_buy}$", f"{round(value['sell'])}$ {balance_sell}$"])
             else:
-                formatted_data.append([value['label'], f"{value['buy']/1000} {round(balance_buy,2)}K", f"{value['sell']/1000} {round(balance_sell,2)}K"])
+                formatted_data.append([value['label'], f"{value['buy']/1000} {balance_buy}K", f"{value['sell']/1000} {balance_sell}K"])
         table_mess = tabulate(formatted_data, headers=["Loại", "Mua", "Bán"], tablefmt="simple")
         s_table = f'```\n{table_mess}```cập nhật lúc: {time_update}'
         post_tele(chat_id,s_table)
