@@ -47,8 +47,8 @@ def temp_K_to_C(temp):
     return int(temp - 273.15)
 
 def unix_time_to_UTC(time):
-    t = datetime.fromtimestamp(time)
-    # t = datetime.fromtimestamp(time) + timedelta(hours=7)
+    # t = datetime.fromtimestamp(time)
+    t = datetime.fromtimestamp(time) + timedelta(hours=7)
     return t.strftime('%H:%M:%S')
 
 def data_openweather(content):

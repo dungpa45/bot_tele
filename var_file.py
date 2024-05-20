@@ -4,6 +4,7 @@ TOKEN = os.environ["TOKEN"]
 API_NINJA = os.environ["API_NINJA"]
 API_WEATHER = os.environ["API_WEATHER"]
 API_AIRVISUAL = os.environ["API_AIRVISUAL"]
+header = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"}
 
 link_quote = "https://favqs.com/api/qotd"
 link_fact = 'https://api.api-ninjas.com/v1/facts?limit=1'
@@ -13,10 +14,12 @@ link_subnet = 'https://networkcalc.com/api/ip/'
 link_meals = "https://www.themealdb.com/api/json/v1/1/random.php"
 link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
 link_country = 'https://restcountries.com/v3.1/independent?status=true'
-link_new_rss = "https://vnexpress.net/rss/tin-moi-nhat.rss"
-link_vang_sjc = 'https://sjc.com.vn/xml/tygiavang.xml'
-link_vang_btmc = 'http://api.btmc.vn/api/BTMCAPI/getpricebtmc?key=3kd8ub1llcg9t45hnoh8hmn7t5kc2v'
+link_vnexpress_new = "https://vnexpress.net/rss/tin-noi-bat.rss"
+link_aws_new = 'https://aws.amazon.com/blogs/aws/feed/'
+link_gold = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"
 link_xsmb = "https://api-xsmb.cyclic.app/api/v1"
+link_xang = "https://vnexpress.net/chu-de/gia-xang-dau-3026"
+link_transfermark = "https://www.transfermarkt.com/spieler-statistik/wertvollstespieler/marktwertetop?land_id=0&ausrichtung=alle&spielerposition_id=alle&altersklasse=alle&jahrgang=0&kontinent_id=0&plus=1"
 
 modau = '''/quote để xem một câu quote
 /fact để xem fact /uselessfact xem fact vô tri
@@ -24,10 +27,12 @@ modau = '''/quote để xem một câu quote
 /cocktail để xem một cốc têu ngẫu nhiên
 /an_trua hay /antrua để coi ăn cái chi
 /country để xem thông tin một quốc gia bất kỳ
-/news số_tin (số tin <=10) xem vài tin tức mới (vd: /news 3)
+/news or /aws số_tin (số tin <=10) xem vài tin tức mới (vd: /news 3)
 /weather Để xem thời tiết
 /gold Xem giá vàng mới
 /xsmb Xem kết quả xsmb mới nhất
+/xang Xem giá xăng mới cập nhật
+/football_price Xem giá cầu thủ đắt nhất thế giới
 Nhập đường link bất kỳ sẽ cho ra một link rút gọn
 Nhập IP hoặc CIDR để kiểm tra'''
 
