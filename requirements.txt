@@ -4,7 +4,7 @@ flickrapi==2.4.0
 google_api_python_client==2.129.0
 google_auth_oauthlib==1.2.0
 googletrans==3.0.0
-protobuf==3.6.1
+protobuf==3.18.3
 python-telegram-bot==21.1.1
 PyYAML==6.0.1
 redis==5.0.4
