@@ -1,4 +1,4 @@
-import json, traceback, os, io
+import json, traceback, io
 import requests, re, random, logging
 import ipaddress, feedparser
 from googletrans import Translator
@@ -37,7 +37,7 @@ def post_tele(chat_id,s_text):
 
 def post_error(error_text,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    payload = {'text': "API error :( \n)"+error_text}
+    payload = {'text': "API error :( \n"+error_text}
     requests.post(url,json=payload)
     return {"statusCode": 200}
 
@@ -83,7 +83,7 @@ def get_n_send_fact(chat_id):
         vn_fact = translate_vn(fact)
         post_tele(chat_id, fact +"\n\n"+ vn_fact)
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         post_error(error,chat_id)
 
 def get_n_send_useless_fact(chat_id):
@@ -94,7 +94,7 @@ def get_n_send_useless_fact(chat_id):
         vn_fact = translate_vn(useless)
         post_tele(chat_id, useless +"\n\n"+ vn_fact)
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         post_error(error,chat_id)
 
 def send_text(text_input,chat_id):
@@ -139,7 +139,7 @@ def get_subnet(subnet):
         content = res.json()
         return content["address"]
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         return error
 
 def valid_ip_or_cidr(ip):
@@ -221,7 +221,7 @@ def send_meals(chat_id):
         # requests.post(url,json=payload)
         post_tele(chat_id,l_info_meal[2])
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         # return error
         post_error(error,chat_id)
 
@@ -266,7 +266,7 @@ def send_cocktail(chat_id):
         # requests.post(url,json=payload)
         post_tele(chat_id,l_info_drink[2])
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         # return error
         post_error(error,chat_id)
 
@@ -333,7 +333,7 @@ def send_country(chat_id):
         # requests.post(url,json=payload)
         post_tele(chat_id,text_info)
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         # return error
         post_error(error,chat_id)
 
@@ -384,7 +384,7 @@ def send_xsmb(chat_id):
         message = head+mess+"\nĐề: *"+kq["ĐB"][0][-2:]+"*"
         post_tele(chat_id,message)
     else:
-        error = "StatusCode: " + res.status_code +" "+ res.text
+        error = "StatusCode: " + str(res.status_code) +" "+ res.text
         post_error(error,chat_id)
 
 def send_xang(chat_id):

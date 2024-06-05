@@ -7,7 +7,7 @@ API_AIRVISUAL = os.environ["API_AIRVISUAL"]
 header = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"}
 
 link_quote = "https://favqs.com/api/qotd"
-link_fact = 'https://api.api-ninjas.com/v1/facts?limit=1'
+link_fact = 'https://api.api-ninjas.com/v1/facts'
 link_uselessfact = "https://uselessfacts.jsph.pl/api/v2/facts/random"
 link_shorten = 'https://cleanuri.com/api/v1/shorten'
 link_subnet = 'https://networkcalc.com/api/ip/'
@@ -47,7 +47,8 @@ meme_shiba = [
 ]
 
 l_antrua = ['cơm rang', 'bún vịt', 'cơm rang ngan', 'bún đậu', 'xôi', 'bún chả',
-                 'bánh mỳ', 'bún pò', 'cơm thố', 'phở pò','cơm trộn','nem nướng']
+            'bánh mỳ', 'bún pò', 'cơm thố', 'phở pò','cơm trộn','nem nướng',
+            'bún ngan','McDonald','dokki','cơm tầng 3']
 #################################################################
 degree_sign= u'\N{DEGREE SIGN}' + "C"
 thunderstorm = u'\U0001F4A8'    # Code: 200's, 900, 901, 902, 905
