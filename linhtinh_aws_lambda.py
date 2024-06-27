@@ -69,12 +69,6 @@ def get_n_send_quote(chat_id):
         error = "StatusCode: " + str(res.status_code) +" "+ res.text
         post_error(error,chat_id)
 
-# def send_quote(chat_id):
-#     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-#     quote = get_quote()
-#     payload = {'parse_mode':'Markdown','text': quote}
-#     requests.post(url,json=payload)
-
 def get_n_send_fact(chat_id):
     res = requests.get(link_fact, headers={'X-Api-Key':API_NINJA})
     if res.status_code == requests.codes.ok:
@@ -271,12 +265,7 @@ def send_cocktail(chat_id):
         post_error(error,chat_id)
 
 def an_trua(chat_id):
-    l_antrua = ['cơm rang', 'bún vịt', 'cơm rang ngan', 'bún đậu', 'xôi', 'bún chả',
-                 'bánh mỳ', 'bún pò', 'cơm thố', 'phở pò','cơm trộn','nem nướng']
     mon = random.choice(l_antrua)
-    # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    # payload = {'parse_mode':'Markdown','text':mon}
-    # requests.post(url,json=payload)
     post_tele(chat_id,mon)
 
 def get_country(country):
@@ -356,7 +345,7 @@ def send_news(chat_id,user_text,link_news):
         vesau = user_text.split(" ")[1]
         try:
             num = int(vesau)
-            if num > 10:
+            if num > 10 or num < 1:
                 text_info = random.choice(l_rep_sai)
                 send_meme(chat_id)
             else:
