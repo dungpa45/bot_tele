@@ -387,8 +387,20 @@ def send_xang(chat_id):
             data = []
             for row in rows:
                 # Extract data from each row
-                cells = [cell.get_text(strip=True) for cell in row.find_all(["td", "th"])]
+                cells = [cell.get_text(strip=True) for cell in row.find_all(["td", "th"])][1:]
+                if len(cells) > 1:
+                    try:
+                        i = cells[1].replace('.','')
+                        cells[1] = int(i)
+                        print(type(cells[1]))# Convert second column to integer
+                    except ValueError:
+                        pass
                 data.append(cells)
+            if len(data) > 0:
+                print(data[0])
+                data[0][1] = data[0][1].split("lúc")[1]
+                data[0][2] = data[0][2].split(" giá")[0]
+                print(data[3][1],type(data[3][1]))
             mess_table = tabulate(data, headers="firstrow", tablefmt="simple")
             s_table = f'```\n{mess_table}```'
             post_tele(chat_id, s_table)
