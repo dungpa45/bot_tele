@@ -1,6 +1,7 @@
 import json, traceback, io
 import requests, re, random, logging
 import ipaddress, feedparser
+from datetime import datetime
 from googletrans import Translator
 from bs4 import BeautifulSoup
 from tabulate import tabulate
@@ -19,9 +20,13 @@ def get_day_name(date_str):
     return day_name
 
 def translate_vn(fact):
-    translator = Translator()
-    vn_fact = translator.translate(fact,dest='vi').text
-    return vn_fact
+    try:
+        translator = Translator()
+        vn_fact = translator.translate(fact,dest='vi').text
+        return vn_fact
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return fact  # Return original if translation fails
 
 def dict_to_text(dictionary):
     text = ''
@@ -38,35 +43,39 @@ def post_tele(chat_id,s_text):
 def post_error(error_text,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
     payload = {'text': "API error :( \n"+error_text}
+    print(error_text)
     requests.post(url,json=payload)
-    return {"statusCode": 200}
+    # return {"statusCode": 200}
 
 def send_photo(image_url,chat_id,cap=None):
-    response = requests.get(image_url)
-    photo = io.BytesIO(response.content)
-    files = {"photo": photo}
-    if cap is None:
-        tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
-    else:
-        tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}&caption={cap}"
     try:
+        response = requests.get(image_url)
+        response.raise_for_status()
+        photo = io.BytesIO(response.content)
+        files = {"photo": photo}
+        if cap is None:
+            tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
+        else:
+            tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}&caption={cap}"
+        
         r=requests.post(tele_url,files=files)
         r.raise_for_status()
-    except HTTPError as e:
+    except Exception as e:
         url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-        payload = {'text': "Có lỗi rồi:\n" + e.response.text}
+        payload = {'text': f"Có lỗi khi gửi ảnh:\n{str(e)}"}
         requests.post(url,json=payload)
 
 def get_n_send_quote(chat_id):
-    res = requests.get(link_quote)
-    if res.status_code == requests.codes.ok:
+    try:
+        res = requests.get(link_quote)
+        res.raise_for_status()
         data_quote = res.json()
         quote = data_quote["quote"]["body"]
         author = data_quote["quote"]["author"]
         message = '_"'+quote+'"_'+"\n\n"+'*'+author+'*'
         post_tele(chat_id,message)
-    else:
-        error = "StatusCode: " + str(res.status_code) +" "+ res.text
+    except Exception as e:
+        error = f"Quote API error: {str(e)}"
         post_error(error,chat_id)
 
 def get_n_send_fact(chat_id):
@@ -118,14 +127,15 @@ def send_meme(chat_id):
 
 
 def short_link(chat_id, text_input):
-    data = {'url': text_input}
-    payload=requests.post(link_shorten,data)
-    short_url=payload.json()['result_url']
-    print("The short url is : {}".format(short_url))
-    # url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    # payload = {'text': short_url}
-    # requests.post(url,json=payload)
-    post_tele(chat_id,short_url)
+    try:
+        data = {'url': text_input}
+        payload=requests.post(link_shorten,data)
+        payload.raise_for_status()
+        short_url=payload.json()['result_url']
+        print("The short url is : {}".format(short_url))
+        post_tele(chat_id,short_url)
+    except Exception as e:
+        post_error(f"Short link error: {str(e)}", chat_id)
 
 def get_subnet(subnet):
     res = requests.get(link_subnet+subnet)
@@ -165,8 +175,8 @@ def send_network_info(text_input,chat_id):
     # post_tele(chat_id,res)
 
 def validate_ip_address(ip_address):
-    # Regular expression pattern for IP address validation
-    pattern = r'^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$'
+    # Regular expression pattern for IP address validation (0-255 for each octet)
+    pattern = r'^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/\d{1,2})?$'
     # Check if the input matches the pattern
     if re.match(pattern, ip_address):
         return True
@@ -359,8 +369,9 @@ def send_news(chat_id,user_text,link_news):
     post_tele(chat_id,text_info)
 
 def send_xsmb(chat_id):
-    res = requests.get(link_xsmb)
-    if res.status_code == requests.codes.ok:
+    try:
+        res = requests.get(link_xsmb)
+        res.raise_for_status()
         response = res.json()
         kq = response['results']
         date = response['time']
@@ -372,9 +383,8 @@ def send_xsmb(chat_id):
             mess += k +": "+ s + "\n"
         message = head+mess+"\nĐề: *"+kq["ĐB"][0][-2:]+"*"
         post_tele(chat_id,message)
-    else:
-        error = "StatusCode: " + str(res.status_code) +" "+ res.text
-        post_error(error,chat_id)
+    except Exception as e:
+        post_error(f"XSMB error: {str(e)}", chat_id)
 
 def send_xang(chat_id):
     response = requests.get(link_xang)
@@ -407,7 +417,7 @@ def send_xang(chat_id):
         else:
             post_error("not found on the webpage.",chat_id)
     else:
-        error = "StatusCode: " + response.status_code +" "+ response.text
+        error = "StatusCode: " + str(response.status_code) +" "+ response.text
         post_error(error,chat_id)
 
 def send_goldprice(chat_id):

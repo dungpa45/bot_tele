@@ -18,8 +18,7 @@ link_vnexpress_new = "https://vnexpress.net/rss/tin-noi-bat.rss"
 link_aws_new = 'https://aws.amazon.com/blogs/aws/feed/'
 link_gold = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"
 link_xsmb = "https://api-xsmb.cyclic.app/api/v1"
-# link_xang = "https://vnexpress.net/chu-de/gia-xang-dau-3026"
-link_xang = "https://www.pvoil.com.vn/truyen-thong/tin-gia-xang-dau"
+link_xang = "https://www.pvoil.com.vn/tin-gia-xang-dau"
 link_transfermark = "https://www.transfermarkt.com/spieler-statistik/wertvollstespieler/marktwertetop?land_id=0&ausrichtung=alle&spielerposition_id=alle&altersklasse=alle&jahrgang=0&kontinent_id=0&plus=1"
 
 modau = '''/quote để xem một câu quote
