@@ -5,7 +5,6 @@ from datetime import datetime
 from googletrans import Translator
 from bs4 import BeautifulSoup
 from tabulate import tabulate
-from requests.exceptions import HTTPError
 from var_file import *
 from weather import *
 
