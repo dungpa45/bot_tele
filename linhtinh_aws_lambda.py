@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup
 from tabulate import tabulate
 from var_file import *
 from weather import *
+from gold_visualizer import GoldScraper, visualize_gold_sjc
+from petrol_scraper import scrape_petrol_prices
+from petrol_visualizer import visualize_petrol_prices
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -33,11 +36,15 @@ def dict_to_text(dictionary):
         text += f"{key}: {value}\n"
     return text
 
-def post_tele(chat_id,s_text):
+def post_tele(chat_id,s_text,parse_mode='Markdown'):
     # s_text: content to send
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
-    payload = {'parse_mode':'Markdown','text': s_text}
-    requests.post(url,json=payload)
+    payload = {'parse_mode':parse_mode,'text': s_text}
+    r = requests.post(url,json=payload)
+    if not r.json().get('ok'):
+        logger.warning(f"[post_tele] {parse_mode} failed: {r.json().get('description')}. Retrying without parse_mode.")
+        payload = {'text': s_text}
+        requests.post(url,json=payload)
 
 def post_error(error_text,chat_id):
     url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
@@ -63,6 +70,17 @@ def send_photo(image_url,chat_id,cap=None):
         url = f'https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}'
         payload = {'text': f"Có lỗi khi gửi ảnh:\n{str(e)}"}
         requests.post(url,json=payload)
+
+def send_photo_buffer(photo_buffer, chat_id, cap=None):
+    try:
+        files = {"photo": ("chart.png", photo_buffer, "image/png")}
+        tele_url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto?chat_id={chat_id}"
+        if cap:
+            tele_url += f"&caption={cap}"
+        r = requests.post(tele_url, files=files)
+        r.raise_for_status()
+    except Exception as e:
+        post_tele(chat_id, f"Có lỗi khi gửi ảnh biểu đồ:\n{str(e)}")
 
 def get_n_send_quote(chat_id):
     try:
@@ -386,38 +404,36 @@ def send_xsmb(chat_id):
         post_error(f"XSMB error: {str(e)}", chat_id)
 
 def send_xang(chat_id):
-    response = requests.get(link_xang)
-    if response.status_code == requests.codes.ok:
-        soup = BeautifulSoup(response.content, "html.parser")
-        # Find the table element based on its class or other attributes
-        table = soup.find("table")
-        if table:
-            rows = table.find_all("tr")
-            data = []
-            for row in rows:
-                # Extract data from each row
-                cells = [cell.get_text(strip=True) for cell in row.find_all(["td", "th"])][1:]
-                if len(cells) > 1:
-                    try:
-                        i = cells[1].replace('.','')
-                        cells[1] = int(i)
-                        print(type(cells[1]))# Convert second column to integer
-                    except ValueError:
-                        pass
-                data.append(cells)
-            if len(data) > 0:
-                print(data[0])
-                data[0][1] = data[0][1].split("lúc")[1]
-                data[0][2] = data[0][2].split(" giá")[0]
-                print(data[3][1],type(data[3][1]))
-            mess_table = tabulate(data, headers="firstrow", tablefmt="simple")
-            s_table = f'```\n{mess_table}```'
-            post_tele(chat_id, s_table)
-        else:
-            post_error("not found on the webpage.",chat_id)
+    logger.info("[send_xang] Start")
+    data = scrape_petrol_prices()
+    logger.info(f"[send_xang] scrape result: status={data.get('status')}, prices_count={len(data.get('retail_prices', []))}, message={data.get('message')}")
+    if data['status'] == 'success':
+        prices = data['retail_prices']
+        if not prices:
+            post_error("Không tìm thấy dữ liệu giá xăng (bảng rỗng)", chat_id)
+            return
+        time_update = datetime.fromisoformat(data['timestamp']).strftime('%Y-%m-%d %H:%M')
+        
+        # Prepare table data
+        table_data = [["Mặt hàng", "Giá (đ)", "Thay đổi"]]
+        for item in prices:
+            table_data.append([item['name'], item['price'], item['change']])
+            
+        mess_table = tabulate(table_data, headers="firstrow", tablefmt="simple")
+        s_table = f'<pre>{mess_table}</pre>\ncập nhật lúc: {time_update}\n\nXem diễn biến giá xăng tại: /xang_chart'
+        post_tele(chat_id, s_table, parse_mode='HTML')
     else:
-        error = "StatusCode: " + str(response.status_code) +" "+ response.text
-        post_error(error,chat_id)
+        post_error(f"Lỗi khi lấy giá xăng: {data.get('message')}", chat_id)
+
+def send_petrol_chart(chat_id):
+    try:
+        img_buf = visualize_petrol_prices()
+        if img_buf:
+            send_photo_buffer(img_buf, chat_id)
+        else:
+            post_tele(chat_id, "Không tìm thấy dữ liệu biểu đồ xăng dầu.")
+    except Exception as e:
+        post_error(f"Error sending petrol chart: {e}", chat_id)
 
 def send_goldprice(chat_id):
     response = requests.get(link_gold)
@@ -448,11 +464,20 @@ def send_goldprice(chat_id):
             else:
                 formatted_data.append([value['label'], f"{value['buy']/1000} {balance_buy}K", f"{value['sell']/1000} {balance_sell}K"])
         table_mess = tabulate(formatted_data, headers=["Loại", "Mua", "Bán"], tablefmt="simple")
-        s_table = f'```\n{table_mess}```cập nhật lúc: {time_update}'
-        post_tele(chat_id,s_table)
-    else:
-        error = "StatusCode: " + response.status_code +" "+ response.text
-        post_error(error,chat_id)
+        s_table = f'<pre>{table_mess}</pre>\ncập nhật lúc: {time_update}\n\nXem diễn biến giá vàng tại: /gold_chart'
+        post_tele(chat_id, s_table, parse_mode='HTML')
+
+def send_gold_chart(chat_id):
+    try:
+        scraper = GoldScraper()
+        raw_gold = scraper.fetch_data()
+        processed_gold = scraper.process_data(raw_gold)
+        if processed_gold:
+            img_buf = visualize_gold_sjc(processed_gold)
+            if img_buf:
+                send_photo_buffer(img_buf, chat_id)
+    except Exception as e:
+        post_error(f"Error sending gold chart: {e}", chat_id)
 
 def send_football_price(chat_id):
     response = requests.get(link_transfermark,headers=header)
@@ -476,7 +501,7 @@ def send_football_price(chat_id):
         else:
             post_error("not found on the webpage.",chat_id)
     else:
-        error = "StatusCode: " + response.status_code +" "+ response.text
+        error = "StatusCode: " + str(response.status_code) +" "+ response.text
         post_error(error,chat_id)
 
 def lambda_handler(event, context):
@@ -540,15 +565,21 @@ def lambda_handler(event, context):
         elif "/weather" in user_text:
             send_weather(chat_id)
             return {"statusCode": 200}
+        elif "/gold_chart" in user_text:
+            send_gold_chart(chat_id)
+            return {"statusCode": 200}
         elif "/gold" in user_text:
             send_goldprice(chat_id)
-            return {"statusCode": 200}            
+            return {"statusCode": 200}
         elif "/xsmb" in user_text:
             send_xsmb(chat_id)
             return {"statusCode": 200}            
+        elif "/xang_chart" in user_text:
+            send_petrol_chart(chat_id)
+            return {"statusCode": 200}
         elif "/xang" in user_text:
             send_xang(chat_id)
-            return {"statusCode": 200}            
+            return {"statusCode": 200}
         elif "/football_price" in user_text:
             send_football_price(chat_id)
             return {"statusCode": 200}            

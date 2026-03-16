@@ -4,10 +4,12 @@
 /dist
 /tmp
 /out-tsc
+*.zip
 
 # Dependencies
 /node_modules
-
+/.venv
+/lambda_layer
 # Cordova
 /www
 /plugins
