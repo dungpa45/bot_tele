@@ -5,7 +5,10 @@ API_NINJA = os.environ["API_NINJA"]
 API_WEATHER = os.environ["API_WEATHER"]
 API_AIRVISUAL = os.environ["API_AIRVISUAL"]
 header = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"}
+place = "Hanoi"
 
+link_weather = 'http://api.openweathermap.org/data/2.5/weather?q={}&lang=vi&appid={}'.format(place,API_WEATHER)
+link_air = "http://api.airvisual.com/v2/city?city=Hanoi&state=Ha Noi&country=Vietnam&key={}".format(API_AIRVISUAL)
 link_quote = "https://favqs.com/api/qotd"
 link_fact = 'https://api.api-ninjas.com/v1/facts'
 link_uselessfact = "https://uselessfacts.jsph.pl/api/v2/facts/random"
@@ -17,8 +20,9 @@ link_country = 'https://restcountries.com/v3.1/independent?status=true'
 link_vnexpress_new = "https://vnexpress.net/rss/tin-noi-bat.rss"
 link_aws_new = 'https://aws.amazon.com/blogs/aws/feed/'
 link_gold = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"
-link_xsmb = "https://api-xsmb.cyclic.app/api/v1"
-link_xang = "https://www.pvoil.com.vn/tin-gia-xang-dau"
+link_xsmb = "https://api-xsmb-today.onrender.com/api/v1"
+# link_xang = "https://www.pvoil.com.vn/tin-gia-xang-dau" # pvoil 
+link_xang = "https://usi-saas.vnexpress.net/chart/get?chart_id=13169"
 link_transfermark = "https://www.transfermarkt.com/spieler-statistik/wertvollstespieler/marktwertetop?land_id=0&ausrichtung=alle&spielerposition_id=alle&altersklasse=alle&jahrgang=0&kontinent_id=0&plus=1"
 
 modau = '''/quote để xem một câu quote

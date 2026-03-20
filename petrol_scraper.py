@@ -6,23 +6,19 @@ import csv
 import io
 import logging
 from datetime import datetime
+from var_file import *
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def fetch_chart_data(chart_id):
+def fetch_chart_data():
     """
     Fetches dynamic chart data from VNExpress API.
     """
-    url = f"https://usi-saas.vnexpress.net/chart/get?chart_id={chart_id}&deviceenv=4"
-    headers = {
-        "Referer": "https://vnexpress.net/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    
+
     try:
-        response = requests.get(url, headers=headers)
-        logger.info(f"[chart] GET {url} -> status={response.status_code}")
+        response = requests.get(link_xang, headers=header)
+        logger.info(f"[chart] GET {link_xang} -> status={response.status_code}")
         response.raise_for_status()
         
         # The response is in JSONP style: vneChart.displayChart(chart_id, {...})
@@ -48,10 +44,10 @@ def fetch_chart_data(chart_id):
                 f = io.StringIO(csv_text)
                 # VNE uses semicolon as delimiter
                 reader = csv.reader(f, delimiter=';')
-                header = next(reader)
+                csv_header = next(reader)
                 
                 # Header format: ["Ngày", "Series 1 Name", "Series 2 Name", ...]
-                series_names = header[1:]
+                series_names = csv_header[1:]
                 for name in series_names:
                     series_data[name] = []
                 
@@ -83,7 +79,7 @@ def fetch_chart_data(chart_id):
                 })
                 
             return {
-                "id": chart_id,
+                "id": "13169",
                 "name": detail.get('title', {}).get('text', 'Diễn biến giá xăng dầu'),
                 "labels": labels,
                 "series": formatted_series
@@ -131,7 +127,7 @@ def scrape_petrol_prices() -> dict:
         logger.info(f"[petrol] Scraped {len(retail_prices)} retail prices")
         
         # 2. Dynamically fetch chart data (id=13169)
-        chart_data = fetch_chart_data("13169")
+        chart_data = fetch_chart_data()
         logger.info(f"[petrol] chart_data fetched: {chart_data is not None}")
         
         result = {

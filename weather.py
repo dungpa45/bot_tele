@@ -3,16 +3,13 @@ import requests
 from datetime import datetime, timedelta
 from var_file import *
 
-place = "Hanoi"
-link = 'http://api.openweathermap.org/data/2.5/weather?q={}&lang=vi&appid={}'.format(place,API_WEATHER)
 try:
-    contents = requests.get(link)
+    contents = requests.get(link_weather)
     contents.raise_for_status()
 except Exception as e:
     contents = None
     print(f"Error fetching OpenWeather data: {e}")
 
-link_air = "http://api.airvisual.com/v2/city?city=Hanoi&state=Hanoi&country=Vietnam&key={}".format(API_AIRVISUAL)
 try:
     content_air_res = requests.get(link_air)
     content_air_res.raise_for_status()
