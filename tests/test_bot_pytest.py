@@ -20,6 +20,7 @@ var_mock.l_antrua = ["Com"]
 var_mock.link_vnexpress_new = "http://rss.test"
 var_mock.link_aws_new = "http://rss.test"
 var_mock.link_country = "http://country.test"
+var_mock.link_exchange_rate = "http://exchange.test"
 var_mock.degree_sign = "°"
 var_mock.starFace = "⭐"
 var_mock.neutralFace = "😐"
@@ -140,3 +141,38 @@ def test_lambda_handler_edited(mocker):
     }
     lambda_handler(event, None)
     mock_send.assert_called_once_with("edited_mess", 123)
+
+def test_lambda_handler_tygia(mocker):
+    mocker.patch('linhtinh_aws_lambda.send_exchange_rate')
+    event = {
+        "body": json.dumps({
+            "message": {"chat": {"id": 123}, "text": "/tygia"}
+        })
+    }
+    response = lambda_handler(event, None)
+    assert response["statusCode"] == 200
+
+def test_send_exchange_rate_success(mocker):
+    from linhtinh_aws_lambda import send_exchange_rate
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        'rates': {'VND': 25880, 'EUR': 0.89, 'GBP': 0.75, 'JPY': 145,
+                  'KRW': 1350, 'CNY': 7.2, 'SGD': 1.33, 'THB': 34,
+                  'AUD': 1.53, 'CAD': 1.36},
+        'time_last_update_utc': 'Thu, 26 Jun 2025 00:00:01'
+    }
+    mocker.patch('linhtinh_aws_lambda.requests.get', return_value=mock_response)
+    mock_post = mocker.patch('linhtinh_aws_lambda.post_tele')
+    send_exchange_rate(123)
+    mock_post.assert_called_once()
+    call_text = mock_post.call_args[0][1]
+    assert 'USD' in call_text
+    assert 'Đô Mỹ' in call_text
+    assert '25,880' in call_text
+
+def test_send_exchange_rate_api_error(mocker):
+    from linhtinh_aws_lambda import send_exchange_rate
+    mocker.patch('linhtinh_aws_lambda.requests.get', side_effect=Exception("API down"))
+    mock_error = mocker.patch('linhtinh_aws_lambda.post_error')
+    send_exchange_rate(123)
+    mock_error.assert_called_once()

@@ -479,6 +479,39 @@ def send_gold_chart(chat_id):
     except Exception as e:
         post_error(f"Error sending gold chart: {e}", chat_id)
 
+def send_exchange_rate(chat_id):
+    try:
+        res = requests.get(link_exchange_rate)
+        res.raise_for_status()
+        data = res.json()
+        rates = data['rates']
+        currencies = [
+            ('USD', 'Đô Mỹ'),
+            ('EUR', 'Euro'),
+            ('GBP', 'Bảng Anh'),
+            ('JPY', 'Yên Nhật'),
+            ('KRW', 'Won Hàn'),
+            ('CNY', 'Tệ TQ'),
+            ('SGD', 'Đô Sing'),
+            ('THB', 'Bạt Thái'),
+            ('AUD', 'Đô Úc'),
+            ('CAD', 'Đô Canada'),
+        ]
+        vnd_rate = rates['VND']
+        table_data = []
+        for curr, name in currencies:
+            if curr == 'USD':
+                table_data.append([f'USD ({name})', f"{vnd_rate:,.0f}"])
+            else:
+                cross_rate = vnd_rate / rates[curr]
+                table_data.append([f'{curr} ({name})', f"{cross_rate:,.0f}"])
+        update_time = datetime.strptime(data['time_last_update_utc'], '%a, %d %b %Y %H:%M:%S %z').strftime('%Y-%m-%d %H:%M')
+        mess_table = tabulate(table_data, headers=['Cặp tiền', 'Tỷ giá (VND)'], tablefmt='simple')
+        s_table = f'<pre>{mess_table}</pre>\ncập nhật: {update_time}'
+        post_tele(chat_id, s_table, parse_mode='HTML')
+    except Exception as e:
+        post_error(f"Exchange rate error: {str(e)}", chat_id)
+
 def send_football_price(chat_id):
     response = requests.get(link_transfermark,headers=header)
     if response.status_code == requests.codes.ok:
@@ -579,6 +612,9 @@ def lambda_handler(event, context):
             return {"statusCode": 200}
         elif "/xang" in user_text:
             send_xang(chat_id)
+            return {"statusCode": 200}
+        elif user_text in ["/tygia","/ty_gia","/exchange"]:
+            send_exchange_rate(chat_id)
             return {"statusCode": 200}
         elif "/football_price" in user_text:
             send_football_price(chat_id)

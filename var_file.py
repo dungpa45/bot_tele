@@ -24,6 +24,7 @@ link_xsmb = "https://api-xsmb-today.onrender.com/api/v1"
 # link_xang = "https://www.pvoil.com.vn/tin-gia-xang-dau" # pvoil 
 link_xang = "https://usi-saas.vnexpress.net/chart/get?chart_id=13169"
 link_transfermark = "https://www.transfermarkt.com/spieler-statistik/wertvollstespieler/marktwertetop?land_id=0&ausrichtung=alle&spielerposition_id=alle&altersklasse=alle&jahrgang=0&kontinent_id=0&plus=1"
+link_exchange_rate = "https://open.er-api.com/v6/latest/USD"
 
 modau = '''/quote để xem một câu quote
 /fact để xem fact /uselessfact xem fact vô tri
@@ -37,6 +38,7 @@ modau = '''/quote để xem một câu quote
 /xsmb Xem kết quả xsmb mới nhất
 /xang Xem giá xăng mới cập nhật
 /football_price Xem giá cầu thủ đắt nhất thế giới
+/tygia Xem tỷ giá ngoại tệ so với VND
 Nhập đường link bất kỳ sẽ cho ra một link rút gọn
 Nhập IP hoặc CIDR để kiểm tra'''
 

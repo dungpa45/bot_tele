@@ -25,6 +25,7 @@ Multi-functional Telegram bot built with Python, designed for stability and fun.
 /xsmb           - Kết quả Xổ Số Miền Bắc hôm nay
 /xang           - Cập nhật giá xăng dầu mới nhất
 /football_price - Xem giá trị thị trường của các cầu thủ bóng đá hàng đầu
+/tygia          - Xem tỷ giá ngoại tệ so với VND
 [URL bất kỳ]    - Tự động rút gọn liên kết
 [IP/CIDR]       - Kiểm tra thông tin mạng và Subnet
 ```
@@ -53,6 +54,7 @@ Covered in tests:
 - Weather logic (Temp conversion, Emoji mapping, AQI ranges)
 - Networking tools (IP/CIDR validation)
 - Core Lambda handler (Command processing, Edited message detection)
+- Exchange rate (API response, error handling)
 - Fallback mechanisms (Translation errors, API failures)
 
 ---
