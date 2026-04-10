@@ -19,7 +19,7 @@ link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
 link_country = 'https://restcountries.com/v3.1/independent?status=true'
 link_vnexpress_new = "https://vnexpress.net/rss/tin-noi-bat.rss"
 link_aws_new = 'https://aws.amazon.com/blogs/aws/feed/'
-link_gold = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"
+link_vne_finance = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"  # gold, petrol, silver, exchange rate
 link_xsmb = "https://api-xsmb-today.onrender.com/api/v1"
 # link_xang = "https://www.pvoil.com.vn/tin-gia-xang-dau" # pvoil 
 link_xang = "https://usi-saas.vnexpress.net/chart/get?chart_id=13169"

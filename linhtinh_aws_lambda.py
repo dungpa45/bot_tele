@@ -412,14 +412,15 @@ def send_xang(chat_id):
         if not prices:
             post_error("Không tìm thấy dữ liệu giá xăng (bảng rỗng)", chat_id)
             return
-        time_update = datetime.fromisoformat(data['timestamp']).strftime('%Y-%m-%d %H:%M')
+        time_update = data.get('date_label') or datetime.fromisoformat(data['timestamp']).strftime('%Y-%m-%d %H:%M')
         
         # Prepare table data
         table_data = [["Mặt hàng", "Giá (đ)", "Thay đổi"]]
         for item in prices:
-            table_data.append([item['name'], item['price'], item['change']])
+            price_str = f"{item['price']:,}".replace(',', '.')
+            table_data.append([item['name'], price_str, item['change']])
             
-        mess_table = tabulate(table_data, headers="firstrow", tablefmt="simple")
+        mess_table = tabulate(table_data, headers="firstrow", tablefmt="simple", disable_numparse=True)
         s_table = f'<pre>{mess_table}</pre>\ncập nhật lúc: {time_update}\n\nXem diễn biến giá xăng tại: /xang_chart'
         post_tele(chat_id, s_table, parse_mode='HTML')
     else:
@@ -436,7 +437,7 @@ def send_petrol_chart(chat_id):
         post_error(f"Error sending petrol chart: {e}", chat_id)
 
 def send_goldprice(chat_id):
-    response = requests.get(link_gold)
+    response = requests.get(link_vne_finance)
     if response.status_code == requests.codes.ok:
         res = response.json()
         update = res['data']['updated_at']
@@ -601,7 +602,7 @@ def lambda_handler(event, context):
         elif "/gold_chart" in user_text:
             send_gold_chart(chat_id)
             return {"statusCode": 200}
-        elif "/gold" in user_text:
+        elif user_text in ["/gold","/vang","/gia_vang"]:
             send_goldprice(chat_id)
             return {"statusCode": 200}
         elif "/xsmb" in user_text:
@@ -610,7 +611,7 @@ def lambda_handler(event, context):
         elif "/xang_chart" in user_text:
             send_petrol_chart(chat_id)
             return {"statusCode": 200}
-        elif "/xang" in user_text:
+        elif user_text in ["/xang","/xang_dau","/petrol"]:
             send_xang(chat_id)
             return {"statusCode": 200}
         elif user_text in ["/tygia","/ty_gia","/exchange"]:

@@ -1,5 +1,4 @@
 import requests
-from bs4 import BeautifulSoup, Tag
 import json
 import re
 import csv
@@ -89,62 +88,50 @@ def fetch_chart_data():
         logger.error(f"[chart] Exception: {e}", exc_info=True)
     return None
 
+def _fetch_prices_from_api() -> tuple[list, str]:
+    """Fetch retail petrol prices from VNExpress API (same source the website uses)."""
+    response = requests.get(link_vne_finance, headers=header, timeout=10)
+    response.raise_for_status()
+    gas_oil = response.json().get('data', {}).get('data', {}).get('gas_oil', {})
+    if not gas_oil:
+        return [], ''
+
+    date_label = gas_oil.get('date_label', '')
+    retail_prices = []
+    for key in ['ron_95', 'e5_ron_92', 'dau_diesel', 'dau_hoa', 'dau_madut']:
+        item = gas_oil.get(key)
+        if not item:
+            continue
+        diff = item.get('diff', 0)
+        change = f"+ {diff:,}".replace(',', '.') if diff > 0 else f"- {abs(diff):,}".replace(',', '.') if diff < 0 else "0"
+        retail_prices.append({
+            "name": item['label'],
+            "price": item['price'],
+            "change": change
+        })
+    return retail_prices, date_label
+
 def scrape_petrol_prices() -> dict:
-    url = "https://vnexpress.net/chu-de/gia-xang-dau-3026"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-    
     try:
-        logger.info(f"[petrol] Fetching {url}")
-        response = requests.get(url, headers=headers, timeout=10)
-        logger.info(f"[petrol] GET {url} -> status={response.status_code}, len={len(response.text)}")
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # 1. Scrape "Giá bán lẻ xăng dầu hôm nay" table
-        retail_prices = []
-        table_header = soup.find('h2', string=lambda t: bool(t and 'Giá bán lẻ xăng dầu hôm nay' in t))
-        logger.info(f"[petrol] table_header found: {table_header is not None}")
-        if isinstance(table_header, Tag):
-            table = table_header.find_next('table')
-            if isinstance(table, Tag):
-                rows = table.find_all('tr')[1:] # Skip header row
-                for row in rows:
-                    if not isinstance(row, Tag):
-                        continue
-                    cols = row.find_all('td')
-                    if len(cols) >= 3:
-                        name = cols[0].get_text(strip=True)
-                        price_text = cols[1].get_text(strip=True).replace('.', '')
-                        change = cols[2].get_text(strip=True)
-                        retail_prices.append({
-                            "name": name,
-                            "price": int(price_text) if price_text.isdigit() else price_text,
-                            "change": change
-                        })
-        
-        logger.info(f"[petrol] Scraped {len(retail_prices)} retail prices")
-        
-        # 2. Dynamically fetch chart data (id=13169)
+        # 1. Fetch retail prices from VNExpress API
+        retail_prices, date_label = _fetch_prices_from_api()
+        logger.info(f"[petrol] API returned {len(retail_prices)} prices, date={date_label}")
+
+        # 2. Fetch chart data
         chart_data = fetch_chart_data()
         logger.info(f"[petrol] chart_data fetched: {chart_data is not None}")
-        
-        result = {
+
+        return {
             "status": "success",
             "timestamp": datetime.now().isoformat(),
+            "date_label": date_label,
             "retail_prices": retail_prices,
             "chart_data": chart_data
         }
-        
-        return result
 
     except Exception as e:
         logger.error(f"[petrol] Exception: {e}", exc_info=True)
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     data = scrape_petrol_prices()
