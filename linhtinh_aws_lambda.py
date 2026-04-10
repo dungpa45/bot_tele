@@ -10,6 +10,7 @@ from weather import *
 from gold_visualizer import GoldScraper, visualize_gold_sjc
 from petrol_scraper import scrape_petrol_prices
 from petrol_visualizer import visualize_petrol_prices
+from silver_visualizer import visualize_silver_prices
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -468,6 +469,43 @@ def send_goldprice(chat_id):
         s_table = f'<pre>{table_mess}</pre>\ncập nhật lúc: {time_update}\n\nXem diễn biến giá vàng tại: /gold_chart'
         post_tele(chat_id, s_table, parse_mode='HTML')
 
+def send_silverprice(chat_id):
+    try:
+        response = requests.get(link_vne_finance)
+        response.raise_for_status()
+        res = response.json()
+        silver = res['data']['data']['silver']
+        date_label = silver.get('date_label', '')
+        items = silver.get('items', [])
+        if not items:
+            post_error("Không tìm thấy dữ liệu giá bạc", chat_id)
+            return
+
+        formatted_data = []
+        for item in items:
+            label = item['label'].title().replace('Phú Quý 999 ', '').replace('(Miếng-Thanh-Thỏi)', '')
+            buy = f"{item['buy']:,}".replace(',', '.')
+            sell = f"{item['sell']:,}".replace(',', '.')
+            diff = item.get('diff_sell', 0)
+            change = f"+{diff:,}".replace(',', '.') if diff > 0 else f"{diff:,}".replace(',', '.') if diff < 0 else "0"
+            formatted_data.append([label, buy, sell, change])
+
+        table_mess = tabulate(formatted_data, headers=["Loại", "Mua", "Bán", "+/-"], tablefmt="simple", disable_numparse=True)
+        s_table = f'<pre>{table_mess}</pre>\ncập nhật: {date_label}\n\nXem biểu đồ giá bạc tại: /silver_chart'
+        post_tele(chat_id, s_table, parse_mode='HTML')
+    except Exception as e:
+        post_error(f"Lỗi khi lấy giá bạc: {str(e)}", chat_id)
+
+def send_silver_chart(chat_id):
+    try:
+        img_buf = visualize_silver_prices()
+        if img_buf:
+            send_photo_buffer(img_buf, chat_id)
+        else:
+            post_tele(chat_id, "Không tìm thấy dữ liệu biểu đồ giá bạc.")
+    except Exception as e:
+        post_error(f"Error sending silver chart: {e}", chat_id)
+
 def send_gold_chart(chat_id):
     try:
         scraper = GoldScraper()
@@ -604,6 +642,12 @@ def lambda_handler(event, context):
             return {"statusCode": 200}
         elif user_text in ["/gold","/vang","/gia_vang"]:
             send_goldprice(chat_id)
+            return {"statusCode": 200}
+        elif "/silver_chart" in user_text or "/bac_chart" in user_text:
+            send_silver_chart(chat_id)
+            return {"statusCode": 200}
+        elif user_text in ["/silver","/bac","/gia_bac"]:
+            send_silverprice(chat_id)
             return {"statusCode": 200}
         elif "/xsmb" in user_text:
             send_xsmb(chat_id)

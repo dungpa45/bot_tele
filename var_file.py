@@ -35,6 +35,7 @@ modau = '''/quote để xem một câu quote
 /news or /aws số_tin (số tin <=10) xem vài tin tức mới (vd: /news 3)
 /weather Để xem thời tiết
 /gold Xem giá vàng mới
+/silver Xem giá bạc mới (hoặc /bac)
 /xsmb Xem kết quả xsmb mới nhất
 /xang Xem giá xăng mới cập nhật
 /football_price Xem giá cầu thủ đắt nhất thế giới
