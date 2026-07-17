@@ -10,7 +10,7 @@ from weather import *
 from gold_visualizer import GoldScraper, visualize_gold_sjc
 from petrol_scraper import scrape_petrol_prices
 from petrol_visualizer import visualize_petrol_prices
-from silver_visualizer import visualize_silver_prices
+# from silver_visualizer import visualize_silver_prices
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -386,21 +386,22 @@ def send_news(chat_id,user_text,link_news):
     # requests.post(url,json=payload)
     post_tele(chat_id,text_info)
 
-def send_xsmb(chat_id):
+def send_xsmb(chat_id, date=None):
     try:
-        res = requests.get(link_xsmb)
+        url = f"{link_xsmb}?date={date}" if date else link_xsmb
+        res = requests.get(url)
         res.raise_for_status()
         response = res.json()
         kq = response['results']
-        date = response['time']
-        dayname = get_day_name(date)
-        head="Kết quả xổ số miền bắc *("+ dayname +" "+date+"*)\n\n"
-        mess=''
-        for k,v in kq.items():
-            s = ' - '.join(str(x) for x in v)
-            mess += k +": "+ s + "\n"
-        message = head+mess+"\nĐề: *"+kq["ĐB"][0][-2:]+"*"
-        post_tele(chat_id,message)
+        display_date = date if date else datetime.now().strftime('%d-%m-%Y')
+        head = f"Kết quả xổ số miền bắc *({display_date})*\n\n"
+        mess = ''
+        for k, v in kq.items():
+            s = ' - '.join(str(x) for x in v) if v else 'Chưa có'
+            mess += k + ": " + s + "\n"
+        db_nums = kq.get("Đặc biệt", [])
+        de = "\nĐề: *" + db_nums[0][-2:] + "*" if db_nums else ""
+        post_tele(chat_id, head + mess + de)
     except Exception as e:
         post_error(f"XSMB error: {str(e)}", chat_id)
 
@@ -415,7 +416,6 @@ def send_xang(chat_id):
             return
         time_update = data.get('date_label') or datetime.fromisoformat(data['timestamp']).strftime('%Y-%m-%d %H:%M')
         
-        # Prepare table data
         table_data = [["Mặt hàng", "Giá (đ)", "Thay đổi"]]
         for item in prices:
             price_str = f"{item['price']:,}".replace(',', '.')
@@ -520,32 +520,28 @@ def send_gold_chart(chat_id):
 
 def send_exchange_rate(chat_id):
     try:
-        res = requests.get(link_exchange_rate)
+        res = requests.get(link_vne_finance)
         res.raise_for_status()
         data = res.json()
-        rates = data['rates']
+        ex_rate = data['data']['data']['ex_rate']
         currencies = [
-            ('USD', 'Đô Mỹ'),
-            ('EUR', 'Euro'),
-            ('GBP', 'Bảng Anh'),
-            ('JPY', 'Yên Nhật'),
-            ('KRW', 'Won Hàn'),
-            ('CNY', 'Tệ TQ'),
-            ('SGD', 'Đô Sing'),
-            ('THB', 'Bạt Thái'),
-            ('AUD', 'Đô Úc'),
-            ('CAD', 'Đô Canada'),
+            ('usd', 'Đô Mỹ'),
+            ('eur', 'Euro'),
+            ('gbp', 'Bảng Anh'),
+            ('jpy', 'Yên Nhật'),
+            ('krw', 'Won Hàn'),
+            ('cny', 'Tệ TQ'),
+            ('sgd', 'Đô Sing'),
+            ('thb', 'Bạt Thái'),
+            ('aud', 'Đô Úc'),
+            ('cad', 'Đô Canada'),
         ]
-        vnd_rate = rates['VND']
         table_data = []
-        for curr, name in currencies:
-            if curr == 'USD':
-                table_data.append([f'USD ({name})', f"{vnd_rate:,.0f}"])
-            else:
-                cross_rate = vnd_rate / rates[curr]
-                table_data.append([f'{curr} ({name})', f"{cross_rate:,.0f}"])
-        update_time = datetime.strptime(data['time_last_update_utc'], '%a, %d %b %Y %H:%M:%S %z').strftime('%Y-%m-%d %H:%M')
-        mess_table = tabulate(table_data, headers=['Cặp tiền', 'Tỷ giá (VND)'], tablefmt='simple')
+        for code, name in currencies:
+            item = ex_rate[code]
+            table_data.append([f'{code.upper()} ({name})', item['cash'], item['transfer'], item['sell']])
+        update_time = datetime.fromisoformat(ex_rate['usd']['date_label']).strftime('%Y-%m-%d %H:%M')
+        mess_table = tabulate(table_data, headers=['Ngoại tệ', 'TM', 'CK', 'Bán'], tablefmt='simple', disable_numparse=True)
         s_table = f'<pre>{mess_table}</pre>\ncập nhật: {update_time}'
         post_tele(chat_id, s_table, parse_mode='HTML')
     except Exception as e:
@@ -650,7 +646,9 @@ def lambda_handler(event, context):
             send_silverprice(chat_id)
             return {"statusCode": 200}
         elif "/xsmb" in user_text:
-            send_xsmb(chat_id)
+            parts = user_text.split()
+            date = parts[1] if len(parts) > 1 else None
+            send_xsmb(chat_id, date)
             return {"statusCode": 200}            
         elif "/xang_chart" in user_text:
             send_petrol_chart(chat_id)

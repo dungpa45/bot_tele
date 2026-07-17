@@ -22,7 +22,7 @@ def visualize_petrol_prices():
     fig, ax = plt.subplots(figsize=(12, 7), dpi=100)
     
     # Custom colors
-    colors = ['#e74c3c', '#2980b9'] # Red for RON 95, Blue for Diesel
+    colors = ['#e74c3c', '#2980b9', "#e8ff15"] # Red for RON 95, Blue for Diesel, Green for Premium
     
     # Plot each series
     for i, s in enumerate(series):

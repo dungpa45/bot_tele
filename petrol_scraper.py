@@ -1,9 +1,7 @@
 import requests
 import json
-import re
-import csv
-import io
 import logging
+import base64
 from datetime import datetime
 from var_file import *
 
@@ -12,84 +10,74 @@ logger.setLevel(logging.INFO)
 
 def fetch_chart_data():
     """
-    Fetches dynamic chart data from VNExpress API.
+    Fetches petrol chart data from VNExpress finance API (gw.vnexpress.net).
     """
-
     try:
-        response = requests.get(link_xang, headers=header)
-        logger.info(f"[chart] GET {link_xang} -> status={response.status_code}")
+        response = requests.get(link_vne_finance, headers=header, timeout=10)
+        logger.info(f"[chart] GET {link_vne_finance} -> status={response.status_code}")
         response.raise_for_status()
-        
-        # The response is in JSONP style: vneChart.displayChart(chart_id, {...})
-        # We need to extract the JSON object (everything between the first { and last })
-        match = re.search(r'(\{.*\})', response.text, re.DOTALL)
-        if not match:
-            logger.warning(f"[chart] No JSON found in response (len={len(response.text)})")
+
+        chart = response.json().get('data', {}).get('data', {}).get('gas_oil_chart', {})
+        if not chart:
+            logger.warning("[chart] No gas_oil_chart data found")
             return None
-            
-        full_json = json.loads(match.group(1))
-        
-        # The actual chart config and data is in 'chart_detail' as a JSON string
-        if 'chart_detail' in full_json:
-            detail = json.loads(full_json['chart_detail'])
-            
-            labels = []
-            series_data = {} # name -> list of values
-            series_names = []
-            
-            # Check if data is provided as CSV (common for VNE charts)
-            csv_text = detail.get('data', {}).get('csv', '')
-            if csv_text:
-                f = io.StringIO(csv_text)
-                # VNE uses semicolon as delimiter
-                reader = csv.reader(f, delimiter=';')
-                csv_header = next(reader)
-                
-                # Header format: ["Ngày", "Series 1 Name", "Series 2 Name", ...]
-                series_names = csv_header[1:]
-                for name in series_names:
-                    series_data[name] = []
-                
-                for row in reader:
-                    if not row: continue
-                    labels.append(row[0].strip('"'))
-                    for i, val in enumerate(row[1:]):
-                        if i < len(series_names):
-                            name = series_names[i]
-                            try:
-                                # Convert to int/float if possible
-                                series_data[name].append(float(val))
-                            except ValueError:
-                                series_data[name].append(val)
-            else:
-                # Fallback to direct xAxis/series extraction if CSV is missing
-                labels = detail.get('xAxis', {}).get('categories', [])
-                series_list = detail.get('series', [])
-                for s in series_list:
-                    name = s.get('name')
-                    series_names.append(name)
-                    series_data[name] = s.get('data', [])
-            
-            formatted_series = []
-            for name in series_names:
-                formatted_series.append({
-                    "name": name,
-                    "values": series_data[name]
-                })
-                
-            return {
-                "id": "13169",
-                "name": detail.get('title', {}).get('text', 'Diễn biến giá xăng dầu'),
-                "labels": labels,
-                "series": formatted_series
-            }
-            
+
+        labels = chart.get('dates', [])
+        series_map = {
+            'ron_95': 'Xăng RON 95',
+            'e5_ron_92': 'Xăng E5 RON 92',
+            'dau_diesel': 'Dầu Diesel',
+        }
+        formatted_series = []
+        for key, name in series_map.items():
+            values = chart.get(key, [])
+            formatted_series.append({"name": name, "values": [float(v) for v in values]})
+
+        return {
+            "id": "gas_oil_chart",
+            "name": "Diễn biến giá xăng dầu trong nước",
+            "labels": labels,
+            "series": formatted_series
+        }
+
     except Exception as e:
         logger.error(f"[chart] Exception: {e}", exc_info=True)
     return None
 
+def _fetch_petrolimex_extras() -> list:
+    """Fetch extra fuel types from Petrolimex that VNExpress doesn't have."""
+    try:
+        payload = json.dumps({
+            "FilterBy": {"And": [
+                {"SystemID": {"Equals": "6783dc1271ff449e95b74a9520964169"}},
+                {"RepositoryID": {"Equals": "a95451e23b474fe5886bfb7cf843f53c"}},
+                {"RepositoryEntityID": {"Equals": "3801378fe1e045b1afa10de7c5776124"}},
+                {"Status": {"Equals": "Published"}}
+            ]},
+            "SortBy": {"LastModified": "Descending"},
+            "Pagination": {"TotalRecords": -1, "TotalPages": 0, "PageSize": 0, "PageNumber": 0}
+        }, separators=(',', ':'))
+        encoded = base64.urlsafe_b64encode(payload.encode()).decode().rstrip('=')
+        url = f"https://portals.petrolimex.com.vn/~apis/portals/cms.item/search?x-request={encoded}&language=vi-VN"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        objects = response.json().get('Objects', [])
+
+        # Only get types that VNExpress doesn't provide
+        extra_aliases = {'ron-95-v', 'e10-ron-95-v', 'e10-ron-95-iii'}
+        extras = []
+        for obj in sorted(objects, key=lambda x: x.get('DIsplayOrder', 99)):
+            if obj.get('Alias') in extra_aliases:
+                price = obj.get('Zone1Price', 0)
+                if price > 0:
+                    extras.append({"name": obj['Title'], "price": price, "change": "—"})
+        return extras
+    except Exception as e:
+        logger.warning(f"[petrolimex] Failed to fetch extras: {e}")
+        return []
+
 def _fetch_prices_from_api() -> tuple[list, str]:
-    """Fetch retail petrol prices from VNExpress API (same source the website uses)."""
+    """Fetch retail petrol prices from VNExpress API, supplemented by Petrolimex extras."""
     response = requests.get(link_vne_finance, headers=header, timeout=10)
     response.raise_for_status()
     gas_oil = response.json().get('data', {}).get('data', {}).get('gas_oil', {})
@@ -102,6 +90,8 @@ def _fetch_prices_from_api() -> tuple[list, str]:
         item = gas_oil.get(key)
         if not item:
             continue
+        if item.get('price', 0) == 0:
+            continue
         diff = item.get('diff', 0)
         change = f"+ {diff:,}".replace(',', '.') if diff > 0 else f"- {abs(diff):,}".replace(',', '.') if diff < 0 else "0"
         retail_prices.append({
@@ -109,6 +99,11 @@ def _fetch_prices_from_api() -> tuple[list, str]:
             "price": item['price'],
             "change": change
         })
+
+    # Append extra types from Petrolimex (RON 95-V, E10 RON 95-V, E10 RON 95-III)
+    extras = _fetch_petrolimex_extras()
+    retail_prices.extend(extras)
+
     return retail_prices, date_label
 
 def scrape_petrol_prices() -> dict:

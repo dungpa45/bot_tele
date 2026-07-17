@@ -19,8 +19,9 @@ var_mock.modau = "Hello"
 var_mock.l_antrua = ["Com"]
 var_mock.link_vnexpress_new = "http://rss.test"
 var_mock.link_aws_new = "http://rss.test"
-var_mock.link_country = "http://country.test"
 var_mock.link_exchange_rate = "http://exchange.test"
+var_mock.link_gold = "http://gold.test"
+var_mock.link_country = "http://country.test"
 var_mock.degree_sign = "°"
 var_mock.starFace = "⭐"
 var_mock.neutralFace = "😐"
@@ -156,10 +157,18 @@ def test_send_exchange_rate_success(mocker):
     from linhtinh_aws_lambda import send_exchange_rate
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        'rates': {'VND': 25880, 'EUR': 0.89, 'GBP': 0.75, 'JPY': 145,
-                  'KRW': 1350, 'CNY': 7.2, 'SGD': 1.33, 'THB': 34,
-                  'AUD': 1.53, 'CAD': 1.36},
-        'time_last_update_utc': 'Thu, 26 Jun 2025 00:00:01'
+        'data': {'data': {'ex_rate': {
+            'usd': {'cash': '26087', 'transfer': '26117', 'sell': '26367', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'eur': {'cash': '28500', 'transfer': '28700', 'sell': '29100', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'gbp': {'cash': '33000', 'transfer': '33200', 'sell': '33800', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'jpy': {'cash': '170', 'transfer': '172', 'sell': '180', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'krw': {'cash': '17', 'transfer': '18', 'sell': '20', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'cny': {'cash': '3500', 'transfer': '3550', 'sell': '3650', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'sgd': {'cash': '19000', 'transfer': '19100', 'sell': '19500', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'thb': {'cash': '700', 'transfer': '710', 'sell': '750', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'aud': {'cash': '18500', 'transfer': '18700', 'sell': '19300', 'date_label': '2026-05-08T10:47:33+07:00'},
+            'cad': {'cash': '18780', 'transfer': '18970', 'sell': '19580', 'date_label': '2026-05-08T10:47:33+07:00'},
+        }}}
     }
     mocker.patch('linhtinh_aws_lambda.requests.get', return_value=mock_response)
     mock_post = mocker.patch('linhtinh_aws_lambda.post_tele')
@@ -168,7 +177,7 @@ def test_send_exchange_rate_success(mocker):
     call_text = mock_post.call_args[0][1]
     assert 'USD' in call_text
     assert 'Đô Mỹ' in call_text
-    assert '25,880' in call_text
+    assert '26087' in call_text
 
 def test_send_exchange_rate_api_error(mocker):
     from linhtinh_aws_lambda import send_exchange_rate
