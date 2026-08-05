@@ -111,23 +111,32 @@ def info_drinks(d):
     return d["strDrinkThumb"], text, guide
 
 def get_country_text(c):
-    curr_ = list(c['currencies'].keys())[0]
-    curr_info = c['currencies'][curr_]
-    try: tien = f"Tiền: {curr_} ({curr_info['name']}), ký hiệu: {curr_info['symbol']}"
-    except: tien = f"Tiền: {curr_} ({curr_info['name']})"
-    try: border = ", ".join(c["borders"])
-    except: border = "khum"
-    return f'''Tên: {c['name']['common']} {c['flag']}
-Tên chính thức: {c['name']['official']}
-Khu vực: {c['region']}, {c['subregion']}
-Thủ đô: {', '.join(c['capital'])}
-Ngôn ngữ: {', '.join(c['languages'].values())}
-Múi giờ: {', '.join(c['timezones'])}
+    # v5 API structure
+    try:
+        curr = c.get('currencies', [{}])[0]
+        tien = f"Tiền: {curr.get('code','N/A')} ({curr.get('name','N/A')}), ký hiệu: {curr.get('symbol','N/A')}"
+    except Exception:
+        tien = "Tiền: N/A"
+    border = ", ".join(c.get('borders', [])) or "không có"
+    cap = ", ".join(x['name'] for x in c.get('capitals', [])) or "N/A"
+    lang = ", ".join(x['name'] for x in c.get('languages', [])) or "N/A"
+    timezones = ", ".join(c.get('timezones', []))
+    area = c.get('area', {}).get('kilometers', 'N/A')
+    flag_emoji = c.get('flag', {}).get('emoji', '')
+    flag_url = c.get('flag', {}).get('url_png', 'N/A')
+    maps = c.get('links', {}).get('google_maps', 'N/A')
+    names = c.get('names', {})
+    return f'''Tên: {names.get('common','')} {flag_emoji}
+Tên chính thức: {names.get('official','')}
+Khu vực: {c.get('region','N/A')}, {c.get('subregion','N/A')}
+Thủ đô: {cap}
+Ngôn ngữ: {lang}
+Múi giờ: {timezones}
 Biên giới: {border}
-Diện tích: {c['area']} km2 | Dân số: {c['population']}
+Diện tích: {area} km2 | Dân số: {c.get('population','N/A')}
 {tien}
-Map: {c['maps']['googleMaps']}
-Quốc kỳ: {c['flags']['png']}'''
+Map: {maps}
+Quốc kỳ: {flag_url}'''
 
 # ── PTB Command Handlers ──────────────────────────────────────────────────────
 
@@ -191,11 +200,20 @@ async def callback_antrua(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]]))
 
 async def cmd_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    res = requests.get(link_country)
+    # v5: dùng random offset để lấy 1 country ngẫu nhiên (free plan max 100/request, total 254)
+    offset = random.randint(0, 253)
+    res = requests.get(
+        f"{link_country}?limit=1&offset={offset}",
+        headers={"Authorization": f"Bearer {API_COUNTRY}"}
+    )
     if res.ok:
-        await update.message.reply_text(get_country_text(random.choice(res.json())))
+        objects = res.json().get('data', {}).get('objects', [])
+        if not objects:
+            await update.message.reply_text("Không lấy được dữ liệu quốc gia.")
+            return
+        await update.message.reply_text(get_country_text(objects[0]))
     else:
-        await update.message.reply_text(f"API lỗi: {res.status_code}")
+        await update.message.reply_text(f"API lỗi: {res.status_code} {res.text[:100]}")
 
 async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:

@@ -4,6 +4,7 @@ TOKEN = os.environ["TOKEN"]
 API_NINJA = os.environ["API_NINJA"]
 API_WEATHER = os.environ["API_WEATHER"]
 API_AIRVISUAL = os.environ["API_AIRVISUAL"]
+API_COUNTRY = os.environ["API_COUNTRY"]
 header = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"}
 place = "Hanoi"
 
@@ -16,7 +17,7 @@ link_shorten = 'https://cleanuri.com/api/v1/shorten'
 link_subnet = 'https://networkcalc.com/api/ip/'
 link_meals = "https://www.themealdb.com/api/json/v1/1/random.php"
 link_cocktail = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
-link_country = 'https://restcountries.com/v3.1/independent?status=true'
+link_country = 'https://api.restcountries.com/countries/v5'
 link_vnexpress_new = "https://vnexpress.net/rss/tin-noi-bat.rss"
 link_aws_new = 'https://aws.amazon.com/blogs/aws/feed/'
 link_vne_finance = "https://gw.vnexpress.net/cr/?name=tygia_vangv202206"  # gold, petrol, silver, exchange rate
