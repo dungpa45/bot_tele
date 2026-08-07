@@ -44,7 +44,7 @@ sys.modules["var_file"] = var_mock
 
 # 2. Add path to sys.path so we can import real modules
 import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 # 3. Import functions to test
 from weather import getEmoji, temp_K_to_C, data_openweather, data_air

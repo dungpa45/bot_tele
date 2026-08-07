@@ -29,6 +29,9 @@ m.hot = "🔥"
 m.defaultEmoji = "🌈"
 sys.modules["var_file"] = m
 
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+
 # Import các hàm cần test sau khi đã giả lập var_file
 from weather import getEmoji, temp_K_to_C, data_air, process_message
 

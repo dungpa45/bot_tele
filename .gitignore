@@ -62,7 +62,7 @@ Thumbs.db
 # Project Secrets
 secret.yaml
 credentials.json
-var_file.py
+# var_file.py
 .env
 
 # Python artifacts
