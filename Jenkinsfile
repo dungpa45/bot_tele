@@ -8,7 +8,7 @@ pipeline {
         FUNCTION_NAME = 'my-lambda-function'
         LAYER_NAME = 'my-lambda-layer'
 
-        AWS_CREDENTIALS = credentials('aws-lambda')
+        AWS_CREDENTIALS = credentials('jenkins-role')
     }
 
     options {
