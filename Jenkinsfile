@@ -99,6 +99,24 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                sh '''
+                    set -eux
+
+                    pip install pytest pytest-mock --quiet
+
+                    TOKEN=x API_WEATHER=x API_AIRVISUAL=x API_NINJA=x \
+                        PYTHONPATH=src pytest tests/ -v --tb=short --junitxml=test-results.xml
+                '''
+            }
+            post {
+                always {
+                    junit 'test-results.xml'
+                }
+            }
+        }
+
         stage('Deploy Lambda Code') {
             steps {
                 sh '''
