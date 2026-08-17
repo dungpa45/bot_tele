@@ -1,0 +1,37 @@
+jenkins:
+
+  systemMessage: |
+    Homelab Jenkins
+    Lambda CI/CD
+
+  numExecutors: 1
+
+  mode: NORMAL
+
+  securityRealm:
+    local:
+      allowsSignup: false
+
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  remotingSecurity:
+    enabled: true
+
+
+unclassified:
+
+  location:
+    url: "http://localhost:8080/"
+
+security:
+  gitHostKeyVerificationConfiguration:
+    sshHostKeyVerificationStrategy:
+      manuallyProvidedKeyVerificationStrategy:
+        approvedHostKeys: |-
+          github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl

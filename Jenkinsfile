@@ -48,9 +48,9 @@ pipeline {
                 sh '''
                     set -eux
 
-                    chmod +x ./build-layer.sh
+                    chmod +x ./build_layer.sh
 
-                    ./build-layer.sh
+                    ./build_layer.sh
 
                     test -f packages.zip
                 '''
@@ -104,15 +104,17 @@ pipeline {
                 sh '''
                     set -eux
 
-                    pip install pytest pytest-mock --quiet
+                    python3 -m venv .venv
+                    .venv/bin/pip install -r requirements-test.txt --quiet
 
                     TOKEN=x API_WEATHER=x API_AIRVISUAL=x API_NINJA=x \
-                        PYTHONPATH=src pytest tests/ -v --tb=short --junitxml=test-results.xml
+                        PYTHONPATH=src .venv/bin/pytest tests/ -v --tb=short \
+                        --junitxml=${WORKSPACE}/test-results.xml
                 '''
             }
             post {
                 always {
-                    junit 'test-results.xml'
+                    junit allowEmptyResults: true, testResults: 'test-results.xml'
                 }
             }
         }

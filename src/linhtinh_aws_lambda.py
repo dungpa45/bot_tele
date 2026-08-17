@@ -7,10 +7,6 @@ from bs4 import BeautifulSoup
 from tabulate import tabulate
 from var_file import *
 from weather import *
-from gold_visualizer import GoldScraper, visualize_gold_sjc
-from petrol_scraper import scrape_petrol_prices
-from petrol_visualizer import visualize_petrol_prices
-# from silver_visualizer import visualize_silver_prices
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -406,6 +402,7 @@ def send_xsmb(chat_id, date=None):
         post_error(f"XSMB error: {str(e)}", chat_id)
 
 def send_xang(chat_id):
+    from petrol_scraper import scrape_petrol_prices
     logger.info("[send_xang] Start")
     data = scrape_petrol_prices()
     logger.info(f"[send_xang] scrape result: status={data.get('status')}, prices_count={len(data.get('retail_prices', []))}, message={data.get('message')}")
@@ -428,6 +425,7 @@ def send_xang(chat_id):
         post_error(f"Lỗi khi lấy giá xăng: {data.get('message')}", chat_id)
 
 def send_petrol_chart(chat_id):
+    from petrol_visualizer import visualize_petrol_prices
     try:
         img_buf = visualize_petrol_prices()
         if img_buf:
@@ -507,6 +505,7 @@ def send_silver_chart(chat_id):
         post_error(f"Error sending silver chart: {e}", chat_id)
 
 def send_gold_chart(chat_id):
+    from gold_visualizer import GoldScraper, visualize_gold_sjc
     try:
         scraper = GoldScraper()
         raw_gold = scraper.fetch_data()

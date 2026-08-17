@@ -20,6 +20,7 @@ var_mock.l_antrua = ["Com"]
 var_mock.link_vnexpress_new = "http://rss.test"
 var_mock.link_aws_new = "http://rss.test"
 var_mock.link_exchange_rate = "http://exchange.test"
+var_mock.link_vne_finance = "http://vne_finance.test"
 var_mock.link_gold = "http://gold.test"
 var_mock.link_country = "http://country.test"
 var_mock.degree_sign = "°"
