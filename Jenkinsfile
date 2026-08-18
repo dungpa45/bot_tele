@@ -30,9 +30,22 @@ pipeline {
                         }
                     }
 
-                    env.REQUIREMENTS_CHANGED = requirementsChanged.toString()
+                    def hasLayer = sh(
+                        script: '''
+                            aws lambda get-function-configuration \
+                                --function-name "$FUNCTION_NAME" \
+                                --query 'Layers' \
+                                --output text 2>/dev/null || echo "NONE"
+                        ''',
+                        returnStdout: true
+                    ).trim()
 
-                    echo "requirements.txt changed: ${env.REQUIREMENTS_CHANGED}"
+                    def isFirstDeploy = (hasLayer == 'NONE' || hasLayer == 'None' || hasLayer == '')
+
+                    env.REQUIREMENTS_CHANGED = (requirementsChanged || isFirstDeploy).toString()
+
+                    echo "requirements.txt changed: ${requirementsChanged}, first deploy: ${isFirstDeploy}"
+                    echo "Will build layer: ${env.REQUIREMENTS_CHANGED}"
                 }
             }
         }
