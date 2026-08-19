@@ -23,7 +23,7 @@ if [ -f "requirements.txt" ]; then
     # Install without --platform/--only-binary since this machine is already
     # Linux x86_64 (same as Lambda). Those flags block pure-Python packages
     # like sgmllib3k (feedparser dep) that have no pre-built wheels.
-    pip install \
+    python3 -m pip install \
         --target "$PYTHON_DIR" \
         --upgrade \
         --no-cache-dir \

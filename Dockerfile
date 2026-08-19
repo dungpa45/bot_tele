@@ -10,6 +10,7 @@ RUN apt-get update && \
         git \
         jq \
         python3 \
+        python3-pip \
         python3-venv \
         ca-certificates && \
     rm -rf /var/lib/apt/lists/*
