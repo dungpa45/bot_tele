@@ -83,8 +83,9 @@ pipeline {
                                 --layer-name "$LAYER_NAME" \
                                 --zip-file fileb://packages.zip \
                                 --compatible-runtimes python3.12 \
-                                --query 'Version' \
-                                --output text
+                                --query 'Version' --output text \
+                                --cli-connect-timeout 120 \
+                                --cli-read-timeout 120
                         ''',
                         returnStdout: true
                     ).trim()
