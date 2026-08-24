@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Script to create an optimized AWS Lambda Layer package
 # Standard installation with heavy cleanup
@@ -27,7 +28,7 @@ if [ -f "requirements.txt" ]; then
         --target "$PYTHON_DIR" \
         --upgrade \
         --no-cache-dir \
-        -r requirements.txt
+        -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
 else
     echo "Error: requirements.txt not found!"
     exit 1

@@ -23,29 +23,43 @@ pipeline {
         stage('Detect Changes') {
             steps {
                 script {
-                    def requirementsChanged = currentBuild.changeSets.any { changeSet ->
-                        changeSet.items.any { item ->
-                            item.affectedFiles.any { file ->
-                                file.path == 'requirements.txt'
-                            }
-                        }
-                    }
-
-                    def hasLayer = sh(
-                        script: '''
-                            aws lambda get-function-configuration \
-                                --function-name "$FUNCTION_NAME" \
-                                --query 'Layers' \
-                                --output text 2>/dev/null || echo "NONE"
-                        ''',
+                    def currentHash = sh(
+                        script: 'sha256sum requirements.txt | cut -d" " -f1',
                         returnStdout: true
                     ).trim()
 
-                    def isFirstDeploy = (hasLayer == 'NONE' || hasLayer == 'None' || hasLayer == '')
+                    def savedHash = sh(
+                        script: 'aws s3 cp s3://$S3_BUCKET/layers/requirements.sha256 - 2>/dev/null || echo "NONE"',
+                        returnStdout: true
+                    ).trim()
 
-                    env.REQUIREMENTS_CHANGED = (requirementsChanged || isFirstDeploy).toString()
+                    def needsBuild
+                    if (savedHash == 'NONE') {
+                        // S3 chưa có hash → kiểm tra Lambda đã có layer chưa
+                        def hasLayer = sh(
+                            script: '''
+                                aws lambda get-function-configuration \
+                                    --function-name "$FUNCTION_NAME" \
+                                    --query 'Layers' \
+                                    --output text 2>/dev/null || echo "NONE"
+                            ''',
+                            returnStdout: true
+                        ).trim()
+                        def isFirstDeploy = (hasLayer == 'NONE' || hasLayer == 'None' || hasLayer == '')
+                        needsBuild = isFirstDeploy
+                        // Lambda đã có layer rồi → lưu hash hiện tại lên S3 để lần sau khỏi cần check lại
+                        if (!isFirstDeploy) {
+                            sh 'echo "$REQUIREMENTS_HASH" | aws s3 cp - s3://$S3_BUCKET/layers/requirements.sha256'
+                        }
+                    } else {
+                        needsBuild = (currentHash != savedHash)
+                    }
 
-                    echo "requirements.txt changed: ${requirementsChanged}, first deploy: ${isFirstDeploy}"
+                    env.REQUIREMENTS_CHANGED = needsBuild.toString()
+                    env.REQUIREMENTS_HASH = currentHash
+
+                    echo "Current hash : ${currentHash}"
+                    echo "Saved hash   : ${savedHash}"
                     echo "Will build layer: ${env.REQUIREMENTS_CHANGED}"
                 }
             }
@@ -92,8 +106,9 @@ pipeline {
                     ).trim()
 
                     env.LAYER_VERSION = layerVersion
-
                     echo "Published Lambda Layer version: ${env.LAYER_VERSION}"
+
+                    sh 'echo "$REQUIREMENTS_HASH" | aws s3 cp - s3://$S3_BUCKET/layers/requirements.sha256'
                 }
             }
         }
