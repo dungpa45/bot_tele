@@ -60,11 +60,9 @@ pipeline {
             steps {
                 sh '''
                     set -eux
-
                     chmod +x ./build_layer.sh
-
                     ./build_layer.sh
-
+                    du -sh packages.zip
                     test -f packages.zip
                 '''
             }
