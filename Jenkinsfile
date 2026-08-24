@@ -43,7 +43,7 @@ pipeline {
                                     --function-name "$FUNCTION_NAME" \
                                     --query 'Layers' \
                                     --output text 2>/dev/null) || true
-                                echo "${result:-NONE}"
+                                if [ -z "$result" ]; then echo "NONE"; else echo "$result"; fi
                             ''',
                             returnStdout: true
                         ).trim()
@@ -169,22 +169,18 @@ pipeline {
             steps {
                 script {
                     def accountId = sh(
-                        script: '''
-                            aws sts get-caller-identity \
-                                --query Account \
-                                --output text
-                        ''',
+                        script: 'aws sts get-caller-identity --query Account --output text',
                         returnStdout: true
                     ).trim()
 
-                    sh """
-                        set -eux
+                    env.LAYER_ARN = "arn:aws:lambda:${env.AWS_DEFAULT_REGION}:${accountId}:layer:${env.LAYER_NAME}:${env.LAYER_VERSION}"
 
+                    sh '''
+                        set -eux
                         aws lambda update-function-configuration \
                             --function-name "$FUNCTION_NAME" \
-                            --layers \
-                            arn:aws:lambda:${AWS_DEFAULT_REGION}:${accountId}:layer:${LAYER_NAME}:${LAYER_VERSION}
-                    """
+                            --layers "$LAYER_ARN"
+                    '''
                 }
             }
         }
