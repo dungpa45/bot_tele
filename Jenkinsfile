@@ -7,6 +7,7 @@ pipeline {
 
         FUNCTION_NAME = 'bot-linhtinh-tele'
         LAYER_NAME = 'tele'
+        S3_BUCKET = 'dung-wp'
 
         AWS_CREDENTIALS = credentials('jenkins-role')
     }
@@ -79,13 +80,13 @@ pipeline {
                 script {
                     def layerVersion = sh(
                         script: '''
+                            aws s3 cp packages.zip s3://$S3_BUCKET/layers/packages.zip
+
                             aws lambda publish-layer-version \
                                 --layer-name "$LAYER_NAME" \
-                                --zip-file fileb://packages.zip \
+                                --content S3Bucket=$S3_BUCKET,S3Key=layers/packages.zip \
                                 --compatible-runtimes python3.12 \
-                                --query 'Version' --output text \
-                                --cli-connect-timeout 120 \
-                                --cli-read-timeout 120
+                                --query 'Version' --output text
                         ''',
                         returnStdout: true
                     ).trim()
