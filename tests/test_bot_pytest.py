@@ -116,12 +116,12 @@ def test_validate_ip_address(ip, expected):
     assert validate_ip_address(ip) == expected
 
 def test_translate_vn_success(mocker):
-    mock_trans = mocker.patch('linhtinh_aws_lambda.Translator')
-    mock_trans.return_value.translate.return_value.text = "Xin chào"
+    mock_trans = mocker.patch('linhtinh_aws_lambda.GoogleTranslator')
+    mock_trans.return_value.translate.return_value = "Xin chào"
     assert translate_vn("Hello") == "Xin chào"
 
 def test_translate_vn_failure(mocker):
-    mocker.patch('linhtinh_aws_lambda.Translator', side_effect=Exception("Fail"))
+    mocker.patch('linhtinh_aws_lambda.GoogleTranslator', side_effect=Exception("Fail"))
     assert translate_vn("Hello") == "Hello"
 
 def test_lambda_handler_quote(mocker):

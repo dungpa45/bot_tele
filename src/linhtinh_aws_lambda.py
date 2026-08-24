@@ -2,7 +2,7 @@ import json, traceback, io
 import requests, re, random, logging
 import ipaddress, feedparser
 from datetime import datetime
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 from bs4 import BeautifulSoup
 from tabulate import tabulate
 from var_file import *
@@ -20,12 +20,10 @@ def get_day_name(date_str):
 
 def translate_vn(fact):
     try:
-        translator = Translator()
-        vn_fact = translator.translate(fact,dest='vi').text
-        return vn_fact
+        return GoogleTranslator(source='auto', target='vi').translate(fact)
     except Exception as e:
         print(f"Translation error: {e}")
-        return fact  # Return original if translation fails
+        return fact
 
 def dict_to_text(dictionary):
     text = ''

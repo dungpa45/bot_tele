@@ -5,7 +5,7 @@ Entry point: lambda_handler
 
 import json, random, logging, traceback, io, re, ipaddress, feedparser, requests
 from datetime import datetime
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 from bs4 import BeautifulSoup
 from tabulate import tabulate
 
@@ -24,7 +24,7 @@ logger.setLevel("INFO")
 
 def translate_vn(text):
     try:
-        return Translator().translate(text, dest='vi').text
+        return GoogleTranslator(source='auto', target='vi').translate(text)
     except Exception:
         return text
 

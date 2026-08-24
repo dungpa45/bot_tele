@@ -34,7 +34,7 @@ else
 fi
 
 # 4. Cleanup and Optimization (CRITICAL)
-echo "[3/4] Optimizing packages to reduce size and fix numpy issue..."
+echo "[3/4] Optimizing packages to reduce size..."
 
 # Remove unnecessary documentation and metadata
 find "$PYTHON_DIR" -name "__pycache__" -type d -exec rm -rf {} +
@@ -44,26 +44,10 @@ find "$PYTHON_DIR" -name "*.pyc" -delete
 find "$PYTHON_DIR" -name "tests" -type d -exec rm -rf {} +
 find "$PYTHON_DIR" -name "test" -type d -exec rm -rf {} +
 
-# Specific fix for numpy: remove source artifacts that make Lambda think
-# it's inside the numpy source tree
-if [ -d "$PYTHON_DIR/numpy" ]; then
-    echo "      Cleaning numpy source artifacts..."
-    find "$PYTHON_DIR/numpy" -name "*.h" -delete 2>/dev/null
-    find "$PYTHON_DIR/numpy" -name "*.c" -delete 2>/dev/null
-    find "$PYTHON_DIR/numpy" -name "*.cpp" -delete 2>/dev/null
-    rm -f "$PYTHON_DIR/numpy/setup.py" 2>/dev/null
-    rm -f "$PYTHON_DIR/numpy/setup.cfg" 2>/dev/null
-    rm -rf "$PYTHON_DIR/numpy/core/include" 2>/dev/null
-    rm -rf "$PYTHON_DIR/numpy/f2py" 2>/dev/null
-    rm -rf "$PYTHON_DIR/numpy/distutils" 2>/dev/null
-fi
-
-# Strip binary files if on Linux (skip numpy/scipy - strip breaks their .so alignment)
+# Strip binary files if on Linux
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "      Stripping debug symbols from .so files (excluding numpy)..."
+    echo "      Stripping debug symbols from .so files..."
     find "$PYTHON_DIR" -name "*.so" \
-        -not -path "*/numpy/*" \
-        -not -path "*/scipy*" \
         -exec strip --strip-unneeded {} + 2>/dev/null
 fi
 
@@ -79,7 +63,6 @@ echo "--- Finished! ---"
 echo "Package created: $ZIP_FILE"
 echo "Current Size: $SIZE"
 echo "-----------------------------------------------"
-echo "QUAN TRỌNG: Nếu Lambda vẫn báo lỗi 'Unable to import module',"
-echo "hãy kiểm tra 'Runtime settings' trên AWS console xem 'Handler'"
+echo "Kiểm tra 'Runtime settings' trên AWS console xem 'Handler'"
 echo "đã khớp với 'tên_file_của_bạn.lambda_handler' chưa."
 echo "-----------------------------------------------"
