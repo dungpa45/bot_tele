@@ -28,6 +28,8 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
+                    env.REQUIREMENTS_HASH = currentHash
+
                     def savedHash = sh(
                         script: 'aws s3 cp s3://$S3_BUCKET/layers/requirements.sha256 - 2>/dev/null || echo "NONE"',
                         returnStdout: true
@@ -35,19 +37,18 @@ pipeline {
 
                     def needsBuild
                     if (savedHash == 'NONE') {
-                        // S3 chưa có hash → kiểm tra Lambda đã có layer chưa
                         def hasLayer = sh(
                             script: '''
-                                aws lambda get-function-configuration \
+                                result=$(aws lambda get-function-configuration \
                                     --function-name "$FUNCTION_NAME" \
                                     --query 'Layers' \
-                                    --output text 2>/dev/null || echo "NONE"
+                                    --output text 2>/dev/null) || true
+                                echo "${result:-NONE}"
                             ''',
                             returnStdout: true
                         ).trim()
                         def isFirstDeploy = (hasLayer == 'NONE' || hasLayer == 'None' || hasLayer == '')
                         needsBuild = isFirstDeploy
-                        // Lambda đã có layer rồi → lưu hash hiện tại lên S3 để lần sau khỏi cần check lại
                         if (!isFirstDeploy) {
                             sh 'echo "$REQUIREMENTS_HASH" | aws s3 cp - s3://$S3_BUCKET/layers/requirements.sha256'
                         }
@@ -56,7 +57,6 @@ pipeline {
                     }
 
                     env.REQUIREMENTS_CHANGED = needsBuild.toString()
-                    env.REQUIREMENTS_HASH = currentHash
 
                     echo "Current hash : ${currentHash}"
                     echo "Saved hash   : ${savedHash}"
