@@ -5,8 +5,8 @@ pipeline {
     environment {
         AWS_DEFAULT_REGION = 'ap-southeast-1'
 
-        FUNCTION_NAME = 'my-lambda-function'
-        LAYER_NAME = 'my-lambda-layer'
+        FUNCTION_NAME = 'bot-linhtinh-tele'
+        LAYER_NAME = 'tele'
 
         AWS_CREDENTIALS = credentials('jenkins-role')
     }
@@ -118,7 +118,7 @@ pipeline {
                     set -eux
 
                     python3 -m venv .venv
-                    .venv/bin/pip install -r requirements-test.txt --quiet
+                    .venv/bin/pip install -r requirements-dev.txt --quiet
 
                     TOKEN=x API_WEATHER=x API_AIRVISUAL=x API_NINJA=x \
                         PYTHONPATH=src .venv/bin/pytest tests/ -v --tb=short \
