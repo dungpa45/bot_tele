@@ -21,14 +21,11 @@ mkdir -p "$PYTHON_DIR"
 # 3. Install requirements
 echo "[2/4] Installing requirements from requirements.txt..."
 if [ -f "requirements.txt" ]; then
+    # sgmllib3k (feedparser dep) has no binary wheel — install separately first
     pip3 install \
         --target "$PYTHON_DIR" \
         --upgrade \
         --no-cache-dir \
-        --platform manylinux2014_x86_64 \
-        --implementation cp \
-        --python-version 3.12 \
-        --only-binary=:all: \
         -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
 else
     echo "Error: requirements.txt not found!"

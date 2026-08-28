@@ -80,7 +80,7 @@ pipeline {
                             aws lambda publish-layer-version \
                                 --layer-name "$LAYER_NAME" \
                                 --content S3Bucket=$S3_BUCKET,S3Key=layers/packages.zip \
-                                --compatible-runtimes python3.12 python3.11 \
+                                --compatible-runtimes python3.10 \
                                 --query 'Version' --output text
                         ''',
                         returnStdout: true
