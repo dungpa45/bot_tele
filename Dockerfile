@@ -15,6 +15,10 @@ RUN apt-get update && \
         ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
+# Docker CLI
+RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+    | tar -xz --strip-components=1 -C /usr/local/bin docker/docker
+
 # AWS CLI
 RUN curl -fsSL \
     "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \

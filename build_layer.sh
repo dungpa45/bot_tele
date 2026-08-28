@@ -21,12 +21,15 @@ mkdir -p "$PYTHON_DIR"
 # 3. Install requirements
 echo "[2/4] Installing requirements from requirements.txt..."
 if [ -f "requirements.txt" ]; then
-    # sgmllib3k (feedparser dep) has no binary wheel — install separately first
-    pip3 install \
-        --target "$PYTHON_DIR" \
-        --upgrade \
-        --no-cache-dir \
-        -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
+    docker run --rm \
+        -v "$(pwd):/workspace" \
+        -w /workspace \
+        public.ecr.aws/lambda/python:3.10 \
+        pip install \
+            --target "$PYTHON_DIR" \
+            --upgrade \
+            --no-cache-dir \
+            -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
 else
     echo "Error: requirements.txt not found!"
     exit 1
