@@ -31,30 +31,11 @@ pipeline {
                     env.REQUIREMENTS_HASH = currentHash
 
                     def savedHash = sh(
-                        script: 'aws s3 cp s3://$S3_BUCKET/layers/requirements.sha256 - 2>/dev/null || echo "NONE"',
+                        script: 'aws s3 cp s3://$S3_BUCKET/layers/requirements.sha256 /tmp/req.sha256 2>/dev/null && cat /tmp/req.sha256 || echo "NONE"',
                         returnStdout: true
                     ).trim()
 
-                    def needsBuild
-                    if (savedHash == 'NONE') {
-                        def hasLayer = sh(
-                            script: '''
-                                result=$(aws lambda get-function-configuration \
-                                    --function-name "$FUNCTION_NAME" \
-                                    --query 'Layers' \
-                                    --output text 2>/dev/null) || true
-                                if [ -z "$result" ]; then echo "NONE"; else echo "$result"; fi
-                            ''',
-                            returnStdout: true
-                        ).trim()
-                        def isFirstDeploy = (hasLayer == 'NONE' || hasLayer == 'None' || hasLayer == '')
-                        needsBuild = isFirstDeploy
-                        if (!isFirstDeploy) {
-                            sh 'echo "$REQUIREMENTS_HASH" | aws s3 cp - s3://$S3_BUCKET/layers/requirements.sha256'
-                        }
-                    } else {
-                        needsBuild = (currentHash != savedHash)
-                    }
+                    def needsBuild = (savedHash == 'NONE') || (savedHash == '') || (currentHash != savedHash)
 
                     env.REQUIREMENTS_CHANGED = needsBuild.toString()
 
