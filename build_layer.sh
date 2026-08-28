@@ -21,15 +21,15 @@ mkdir -p "$PYTHON_DIR"
 # 3. Install requirements
 echo "[2/4] Installing requirements from requirements.txt..."
 if [ -f "requirements.txt" ]; then
-    docker run --rm \
-        -v "$(pwd):/workspace" \
-        -w /workspace \
-        public.ecr.aws/lambda/python:3.12 \
-        pip install \
-            --target "$PYTHON_DIR" \
-            --upgrade \
-            --no-cache-dir \
-            -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
+    pip3 install \
+        --target "$PYTHON_DIR" \
+        --upgrade \
+        --no-cache-dir \
+        --platform manylinux2014_x86_64 \
+        --implementation cp \
+        --python-version 3.12 \
+        --only-binary=:all: \
+        -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
 else
     echo "Error: requirements.txt not found!"
     exit 1
