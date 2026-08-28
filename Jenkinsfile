@@ -73,10 +73,10 @@ pipeline {
 
             steps {
                 script {
+                    sh 'aws s3 cp packages.zip s3://$S3_BUCKET/layers/packages.zip'
+
                     def layerVersion = sh(
                         script: '''
-                            aws s3 cp packages.zip s3://$S3_BUCKET/layers/packages.zip
-
                             aws lambda publish-layer-version \
                                 --layer-name "$LAYER_NAME" \
                                 --content S3Bucket=$S3_BUCKET,S3Key=layers/packages.zip \
