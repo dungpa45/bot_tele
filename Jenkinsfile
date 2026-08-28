@@ -99,7 +99,7 @@ pipeline {
                             aws lambda publish-layer-version \
                                 --layer-name "$LAYER_NAME" \
                                 --content S3Bucket=$S3_BUCKET,S3Key=layers/packages.zip \
-                                --compatible-runtimes python3.12 \
+                                --compatible-runtimes python3.12 python3.11 \
                                 --query 'Version' --output text
                         ''',
                         returnStdout: true
@@ -155,6 +155,9 @@ pipeline {
                     aws lambda update-function-code \
                         --function-name "$FUNCTION_NAME" \
                         --zip-file fileb://lambda-function.zip
+
+                    aws lambda wait function-updated \
+                        --function-name "$FUNCTION_NAME"
                 '''
             }
         }

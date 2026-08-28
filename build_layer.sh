@@ -21,14 +21,15 @@ mkdir -p "$PYTHON_DIR"
 # 3. Install requirements
 echo "[2/4] Installing requirements from requirements.txt..."
 if [ -f "requirements.txt" ]; then
-    # Install without --platform/--only-binary since this machine is already
-    # Linux x86_64 (same as Lambda). Those flags block pure-Python packages
-    # like sgmllib3k (feedparser dep) that have no pre-built wheels.
-    pip3 install \
-        --target "$PYTHON_DIR" \
-        --upgrade \
-        --no-cache-dir \
-        -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
+    docker run --rm \
+        -v "$(pwd):/workspace" \
+        -w /workspace \
+        public.ecr.aws/lambda/python:3.12 \
+        pip install \
+            --target "$PYTHON_DIR" \
+            --upgrade \
+            --no-cache-dir \
+            -r requirements.txt || { echo "ERROR: pip install failed! Aborting."; exit 1; }
 else
     echo "Error: requirements.txt not found!"
     exit 1
